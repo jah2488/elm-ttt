@@ -1,0 +1,42 @@
+Elm.Display = Elm.Display || {};
+Elm.Display.make = function (_elm) {
+   "use strict";
+   _elm.Display = _elm.Display || {};
+   if (_elm.Display.values) return _elm.Display.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Mailbox = Elm.Mailbox.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Styles = Elm.Styles.make(_elm);
+   var _op = {};
+   var cell = F2(function (index,cell) {
+      var content = function () {
+         var _p0 = cell;
+         if (_p0.ctor === "Empty") {
+               return $Basics.toString(index + 1);
+            } else {
+               return $Basics.toString(cell);
+            }
+      }();
+      return A2($Html.button,
+      _U.list([$Styles.cellStyles,A2($Html$Events.onClick,$Mailbox.actions.address,$Common.Move(index))]),
+      _U.list([$Html.text(content)]));
+   });
+   var display = F2(function (address,game) {
+      return A2($Html.div,
+      _U.list([]),
+      _U.list([A2($Html.h1,_U.list([$Styles.titleStyles]),_U.list([$Html.text("Elm Tac Toe")]))
+              ,A2($Html.hr,_U.list([]),_U.list([]))
+              ,A2($Html.div,_U.list([$Styles.boardStyles]),A2($List.indexedMap,cell,game.board))
+              ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Turn: ",$Basics.toString(game.turn)))]))
+              ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))]));
+   });
+   return _elm.Display.values = {_op: _op,cell: cell,display: display};
+};

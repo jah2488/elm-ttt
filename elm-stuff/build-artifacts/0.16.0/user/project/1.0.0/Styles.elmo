@@ -1,0 +1,23 @@
+Elm.Styles = Elm.Styles || {};
+Elm.Styles.make = function (_elm) {
+   "use strict";
+   _elm.Styles = _elm.Styles || {};
+   if (_elm.Styles.values) return _elm.Styles.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var cellStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "margin",_1: "10px"}
+                                                   ,{ctor: "_Tuple2",_0: "width",_1: "150px"}
+                                                   ,{ctor: "_Tuple2",_0: "height",_1: "150px"}
+                                                   ,{ctor: "_Tuple2",_0: "font-size",_1: "6em"}]));
+   var boardStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "width",_1: "510px"},{ctor: "_Tuple2",_0: "margin",_1: "0 auto"}]));
+   var titleStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "text-align",_1: "center"}]));
+   return _elm.Styles.values = {_op: _op,titleStyles: titleStyles,boardStyles: boardStyles,cellStyles: cellStyles};
+};

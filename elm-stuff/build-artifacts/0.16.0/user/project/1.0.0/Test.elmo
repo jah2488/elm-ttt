@@ -1,0 +1,22 @@
+Elm.Test = Elm.Test || {};
+Elm.Test.make = function (_elm) {
+   "use strict";
+   _elm.Test = _elm.Test || {};
+   if (_elm.Test.values) return _elm.Test.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $BoardTest = Elm.BoardTest.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest = Elm.ElmTest.make(_elm),
+   $GameTest = Elm.GameTest.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $UtilsTest = Elm.UtilsTest.make(_elm);
+   var _op = {};
+   var ticTacToeSuite = A2($ElmTest.suite,"Elm Tac Toe",_U.list([$GameTest.gameSuite,$BoardTest.boardSuite,$UtilsTest.utilsSuite]));
+   var main = $ElmTest.elementRunner(ticTacToeSuite);
+   return _elm.Test.values = {_op: _op,ticTacToeSuite: ticTacToeSuite,main: main};
+};

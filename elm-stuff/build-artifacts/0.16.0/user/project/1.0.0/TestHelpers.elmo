@@ -1,0 +1,29 @@
+Elm.TestHelpers = Elm.TestHelpers || {};
+Elm.TestHelpers.make = function (_elm) {
+   "use strict";
+   _elm.TestHelpers = _elm.TestHelpers || {};
+   if (_elm.TestHelpers.values) return _elm.TestHelpers.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var gameWithBoard = function (startBoard) {    return {turn: $Common.Human,board: startBoard,winner: $Common.None,state: $Common.Playing};};
+   var newGame = {turn: $Common.Human
+                 ,board: _U.list([$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty])
+                 ,winner: $Common.None
+                 ,state: $Common.Playing};
+   return _elm.TestHelpers.values = {_op: _op,newGame: newGame,gameWithBoard: gameWithBoard};
+};

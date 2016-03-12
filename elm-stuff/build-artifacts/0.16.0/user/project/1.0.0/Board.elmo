@@ -1,0 +1,40 @@
+Elm.Board = Elm.Board || {};
+Elm.Board.make = function (_elm) {
+   "use strict";
+   _elm.Board = _elm.Board || {};
+   if (_elm.Board.values) return _elm.Board.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var place = function (player) {
+      var _p0 = player;
+      switch (_p0.ctor)
+      {case "Human": return $Common.X;
+         case "Computer": return $Common.O;
+         default: return $Common.Empty;}
+   };
+   var makeMove = F2(function (id,game) {
+      var newBoard = A2($List.indexedMap,F2(function (idx,cell) {    return _U.eq(id,idx) ? place(game.turn) : cell;}),game.board);
+      return _U.update(game,{board: newBoard});
+   });
+   var movesFor = F2(function (board,player) {
+      var playerPiece = place(player);
+      var isPlayer = function (_p1) {    var _p2 = _p1;return _U.eq(playerPiece,_p2._1) ? $Maybe.Just(_p2._0) : $Maybe.Nothing;};
+      return A2($List.filterMap,isPlayer,A2($List.indexedMap,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),board));
+   });
+   var winningMoves = _U.list([_U.list([0,1,2])
+                              ,_U.list([3,4,5])
+                              ,_U.list([6,7,8])
+                              ,_U.list([0,3,6])
+                              ,_U.list([1,4,7])
+                              ,_U.list([2,5,8])
+                              ,_U.list([0,4,8])
+                              ,_U.list([6,4,2])]);
+   return _elm.Board.values = {_op: _op,winningMoves: winningMoves,place: place,makeMove: makeMove,movesFor: movesFor};
+};
