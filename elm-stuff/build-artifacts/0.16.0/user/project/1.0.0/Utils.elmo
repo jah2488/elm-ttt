@@ -6,13 +6,18 @@ Elm.Utils.make = function (_elm) {
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var getWithDefault = F3(function (key,$default,dict) {    return A2($Maybe.withDefault,$default,A2($Dict.get,key,dict));});
+   var zipmap = F2(function (listA,listB) {
+      return $Dict.fromList(A3($List.map2,F2(function (la,lb) {    return {ctor: "_Tuple2",_0: la,_1: lb};}),listA,listB));
+   });
    var isSubset = F2(function (listA,listB) {
       return _U.cmp($List.length(listA),$List.length(listB)) < 1 && A2($List.all,function (x) {    return A2($List.member,x,listB);},listA);
    });
-   return _elm.Utils.values = {_op: _op,isSubset: isSubset};
+   return _elm.Utils.values = {_op: _op,isSubset: isSubset,zipmap: zipmap,getWithDefault: getWithDefault};
 };

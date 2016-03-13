@@ -3,7 +3,7 @@ module Common where
 -- Data Types
 type State = Playing | GameOver
 type Player = Human | Computer | None
-type Cell = X | O | Empty | Int
+type Cell = X | O | Empty
 type Action = NoOp | Move Int
 
 -- Model

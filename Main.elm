@@ -5,7 +5,15 @@ import Game exposing (..)
 import Board exposing (..)
 import Display exposing (..)
 import Mailbox exposing (..)
+import Ai
 
+
+makeComputerMove : Game -> Game
+makeComputerMove game =
+  let
+    moveLocation = Ai.bestMove game.board game.turn
+  in
+    { game | board = updateBoard moveLocation game.turn game.board }
 
 update : Action -> Game -> Game
 update action game =
@@ -16,10 +24,12 @@ update action game =
         makeMove id game
           |> checkForWinners
           |> switchCurrentPlayer
+          |> makeComputerMove
+          |> checkForWinners
+          |> switchCurrentPlayer
       else
         game
 
--- manage the model of our application over time
 model : Signal Game
 model =
   Signal.foldp update newGame actions.signal

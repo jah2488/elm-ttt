@@ -1,0 +1,46 @@
+Elm.Ai = Elm.Ai || {};
+Elm.Ai.make = function (_elm) {
+   "use strict";
+   _elm.Ai = _elm.Ai || {};
+   if (_elm.Ai.values) return _elm.Ai.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Board = Elm.Board.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $Game = Elm.Game.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Utils = Elm.Utils.make(_elm);
+   var _op = {};
+   var isWinner = F2(function (board,player) {
+      var moves = A2($Board.movesFor,board,player);
+      return A2($List.any,function (winSet) {    return A2($Utils.isSubset,winSet,moves);},$Board.winningMoves);
+   });
+   var rankBoard = F3(function (board,player,winScore) {
+      rankBoard: while (true) if (A2(isWinner,board,player)) return winScore; else if (A2(isWinner,board,$Game.switchPlayer(player))) return winScore * -1;
+         else if (_U.eq(A2($Board.movesFor,board,$Common.None),_U.list([]))) return 0; else {
+                  var opponent = $Game.switchPlayer(player);
+                  var nextBoard = A3($Board.updateBoard,A2(bestMove,board,opponent),opponent,board);
+                  var _v0 = nextBoard,_v1 = opponent,_v2 = winScore * -1;
+                  board = _v0;
+                  player = _v1;
+                  winScore = _v2;
+                  continue rankBoard;
+               }
+   });
+   var bestMove = F2(function (board,player) {
+      var updatedBoard = function (id) {    return A3($Board.updateBoard,id,player,board);};
+      var rankedBoard = function (id) {    return A3(rankBoard,updatedBoard(id),player,1);};
+      var moves = A2($Board.movesFor,board,$Common.None);
+      var mappedMoves = A2($List.map,function (id) {    return rankedBoard(id);},moves);
+      var scores = A2($Utils.zipmap,moves,mappedMoves);
+      var bestScore = A2($Maybe.withDefault,0,$List.maximum($Dict.values(scores)));
+      var bestMove = A2($List.filter,function (x) {    return _U.eq(A2($Maybe.withDefault,0,A2($Dict.get,x,scores)),bestScore);},moves);
+      return A2($Maybe.withDefault,0,$List.head(bestMove));
+   });
+   return _elm.Ai.values = {_op: _op,isWinner: isWinner,bestMove: bestMove,rankBoard: rankBoard};
+};
