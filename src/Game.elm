@@ -48,7 +48,7 @@ checkForWinners game =
           winningMoves
   in
     if didWin == True then
-      { game | winner = game.turn }
+      { game | winner = game.turn, state = GameOver }
     else
       game
 

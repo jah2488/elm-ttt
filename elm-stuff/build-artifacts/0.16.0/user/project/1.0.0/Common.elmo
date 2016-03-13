@@ -12,6 +12,7 @@ Elm.Common.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
    var Game = F5(function (a,b,c,d,e) {    return {turn: a,board: b,winner: c,state: d,message: e};});
+   var NewGame = {ctor: "NewGame"};
    var Move = function (a) {    return {ctor: "Move",_0: a};};
    var NoOp = {ctor: "NoOp"};
    var Empty = {ctor: "Empty"};
@@ -33,5 +34,6 @@ Elm.Common.make = function (_elm) {
                                ,Empty: Empty
                                ,NoOp: NoOp
                                ,Move: Move
+                               ,NewGame: NewGame
                                ,Game: Game};
 };

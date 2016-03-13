@@ -5,6 +5,7 @@ Elm.Styles.make = function (_elm) {
    if (_elm.Styles.values) return _elm.Styles.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
+   $Common = Elm.Common.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
@@ -34,7 +35,17 @@ Elm.Styles.make = function (_elm) {
                                             ,{ctor: "_Tuple2",_0: "font-size",_1: "6em"}
                                             ,contentStyle]));
    };
-   var boardStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "width",_1: "510px"},{ctor: "_Tuple2",_0: "margin",_1: "0 auto"}]));
+   var boardStyles = function (gameState) {
+      var gameOverStyles = _U.eq(gameState,$Common.GameOver) ? _U.list([{ctor: "_Tuple2",_0: "opacity",_1: "0.5"}
+                                                                       ,{ctor: "_Tuple2",_0: "pointer-events",_1: "none"}
+                                                                       ,{ctor: "_Tuple2",_0: "-webkit-user-select",_1: "none"}
+                                                                       ,{ctor: "_Tuple2",_0: "-moz-user-select",_1: "none"}
+                                                                       ,{ctor: "_Tuple2",_0: "user-select",_1: "none"}]) : _U.list([]);
+      var standardStyles = _U.list([{ctor: "_Tuple2",_0: "width",_1: "510px"}
+                                   ,{ctor: "_Tuple2",_0: "margin",_1: "0 auto"}
+                                   ,{ctor: "_Tuple2",_0: "overflow",_1: "hidden"}]);
+      return $Html$Attributes.style(A2($List.append,standardStyles,gameOverStyles));
+   };
    var titleStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "text-align",_1: "center"}]));
    return _elm.Styles.values = {_op: _op,titleStyles: titleStyles,boardStyles: boardStyles,cellStyles: cellStyles,messageStyles: messageStyles};
 };

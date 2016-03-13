@@ -18,6 +18,7 @@ makeComputerMove game =
 update : Action -> Game -> Game
 update action game =
   case action of
+    NewGame -> newGame
     NoOp -> game
     Move id ->
       if validMove id game then
