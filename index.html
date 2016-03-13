@@ -10263,7 +10263,6 @@ Elm.Common.make = function (_elm) {
    var Game = F4(function (a,b,c,d) {    return {turn: a,board: b,winner: c,state: d};});
    var Move = function (a) {    return {ctor: "Move",_0: a};};
    var NoOp = {ctor: "NoOp"};
-   var Int = {ctor: "Int"};
    var Empty = {ctor: "Empty"};
    var O = {ctor: "O"};
    var X = {ctor: "X"};
@@ -10281,7 +10280,6 @@ Elm.Common.make = function (_elm) {
                                ,X: X
                                ,O: O
                                ,Empty: Empty
-                               ,Int: Int
                                ,NoOp: NoOp
                                ,Move: Move
                                ,Game: Game};
@@ -10299,20 +10297,27 @@ Elm.Board.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var place = function (player) {
-      var _p0 = player;
+   var cellPlayer = function (cell) {
+      var _p0 = cell;
       switch (_p0.ctor)
+      {case "X": return $Common.Human;
+         case "O": return $Common.Computer;
+         default: return $Common.None;}
+   };
+   var place = function (player) {
+      var _p1 = player;
+      switch (_p1.ctor)
       {case "Human": return $Common.X;
          case "Computer": return $Common.O;
          default: return $Common.Empty;}
    };
-   var makeMove = F2(function (id,game) {
-      var newBoard = A2($List.indexedMap,F2(function (idx,cell) {    return _U.eq(id,idx) ? place(game.turn) : cell;}),game.board);
-      return _U.update(game,{board: newBoard});
+   var updateBoard = F3(function (id,player,board) {
+      return A2($List.indexedMap,F2(function (idx,cell) {    return _U.eq(id,idx) ? place(player) : cell;}),board);
    });
+   var makeMove = F2(function (id,game) {    return _U.update(game,{board: A3(updateBoard,id,game.turn,game.board)});});
    var movesFor = F2(function (board,player) {
       var playerPiece = place(player);
-      var isPlayer = function (_p1) {    var _p2 = _p1;return _U.eq(playerPiece,_p2._1) ? $Maybe.Just(_p2._0) : $Maybe.Nothing;};
+      var isPlayer = function (_p2) {    var _p3 = _p2;return _U.eq(playerPiece,_p3._1) ? $Maybe.Just(_p3._0) : $Maybe.Nothing;};
       return A2($List.filterMap,isPlayer,A2($List.indexedMap,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),board));
    });
    var winningMoves = _U.list([_U.list([0,1,2])
@@ -10323,7 +10328,128 @@ Elm.Board.make = function (_elm) {
                               ,_U.list([2,5,8])
                               ,_U.list([0,4,8])
                               ,_U.list([6,4,2])]);
-   return _elm.Board.values = {_op: _op,winningMoves: winningMoves,place: place,makeMove: makeMove,movesFor: movesFor};
+   return _elm.Board.values = {_op: _op
+                              ,winningMoves: winningMoves
+                              ,place: place
+                              ,cellPlayer: cellPlayer
+                              ,updateBoard: updateBoard
+                              ,makeMove: makeMove
+                              ,movesFor: movesFor};
+};Elm.Utils = Elm.Utils || {};
+Elm.Utils.make = function (_elm) {
+   "use strict";
+   _elm.Utils = _elm.Utils || {};
+   if (_elm.Utils.values) return _elm.Utils.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var getWithDefault = F3(function (key,$default,dict) {    return A2($Maybe.withDefault,$default,A2($Dict.get,key,dict));});
+   var zipmap = F2(function (listA,listB) {
+      return $Dict.fromList(A3($List.map2,F2(function (la,lb) {    return {ctor: "_Tuple2",_0: la,_1: lb};}),listA,listB));
+   });
+   var isSubset = F2(function (listA,listB) {
+      return _U.cmp($List.length(listA),$List.length(listB)) < 1 && A2($List.all,function (x) {    return A2($List.member,x,listB);},listA);
+   });
+   return _elm.Utils.values = {_op: _op,isSubset: isSubset,zipmap: zipmap,getWithDefault: getWithDefault};
+};Elm.Game = Elm.Game || {};
+Elm.Game.make = function (_elm) {
+   "use strict";
+   _elm.Game = _elm.Game || {};
+   if (_elm.Game.values) return _elm.Game.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Board = Elm.Board.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Utils = Elm.Utils.make(_elm);
+   var _op = {};
+   var validMove = F2(function (id,game) {    return A2($List.member,id,A2($Board.movesFor,game.board,$Common.None));});
+   var checkForWinners = function (game) {
+      var moves = A2($Board.movesFor,game.board,game.turn);
+      var didWin = A2($List.any,function (winSet) {    return A2($Utils.isSubset,winSet,moves);},$Board.winningMoves);
+      return _U.eq(didWin,true) ? _U.update(game,{winner: game.turn}) : game;
+   };
+   var switchPlayer = function (turn) {
+      var _p0 = turn;
+      switch (_p0.ctor)
+      {case "Human": return $Common.Computer;
+         case "Computer": return $Common.Human;
+         default: return $Common.None;}
+   };
+   var switchCurrentPlayer = function (game) {    return _U.update(game,{turn: switchPlayer(game.turn)});};
+   var newGame = {turn: $Common.Human
+                 ,board: _U.list([$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty])
+                 ,winner: $Common.None
+                 ,state: $Common.Playing};
+   return _elm.Game.values = {_op: _op
+                             ,newGame: newGame
+                             ,switchPlayer: switchPlayer
+                             ,switchCurrentPlayer: switchCurrentPlayer
+                             ,checkForWinners: checkForWinners
+                             ,validMove: validMove};
+};Elm.Ai = Elm.Ai || {};
+Elm.Ai.make = function (_elm) {
+   "use strict";
+   _elm.Ai = _elm.Ai || {};
+   if (_elm.Ai.values) return _elm.Ai.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Board = Elm.Board.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $Game = Elm.Game.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Utils = Elm.Utils.make(_elm);
+   var _op = {};
+   var isWinner = F2(function (board,player) {
+      var moves = A2($Board.movesFor,board,player);
+      return A2($List.any,function (winSet) {    return A2($Utils.isSubset,winSet,moves);},$Board.winningMoves);
+   });
+   var rankBoard = F3(function (board,player,winScore) {
+      rankBoard: while (true) if (A2(isWinner,board,player)) return winScore; else if (A2(isWinner,board,$Game.switchPlayer(player))) return winScore * -1;
+         else if (_U.eq(A2($Board.movesFor,board,$Common.None),_U.list([]))) return 0; else {
+                  var opponent = $Game.switchPlayer(player);
+                  var nextBoard = A3($Board.updateBoard,A2(bestMove,board,opponent),opponent,board);
+                  var _v0 = nextBoard,_v1 = opponent,_v2 = winScore * -1;
+                  board = _v0;
+                  player = _v1;
+                  winScore = _v2;
+                  continue rankBoard;
+               }
+   });
+   var bestMove = F2(function (board,player) {
+      var updatedBoard = function (id) {    return A3($Board.updateBoard,id,player,board);};
+      var rankedBoard = function (id) {    return A3(rankBoard,updatedBoard(id),player,1);};
+      var moves = A2($Board.movesFor,board,$Common.None);
+      var mappedMoves = A2($List.map,function (id) {    return rankedBoard(id);},moves);
+      var scores = A2($Utils.zipmap,moves,mappedMoves);
+      var bestScore = A2($Maybe.withDefault,0,$List.maximum($Dict.values(scores)));
+      var bestMove = A2($List.filter,function (x) {    return _U.eq(A2($Maybe.withDefault,0,A2($Dict.get,x,scores)),bestScore);},moves);
+      return A2($Maybe.withDefault,0,$List.head(bestMove));
+   });
+   return _elm.Ai.values = {_op: _op,isWinner: isWinner,bestMove: bestMove,rankBoard: rankBoard};
 };Elm.Styles = Elm.Styles || {};
 Elm.Styles.make = function (_elm) {
    "use strict";
@@ -10403,77 +10529,13 @@ Elm.Display.make = function (_elm) {
               ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))]));
    });
    return _elm.Display.values = {_op: _op,cell: cell,display: display};
-};Elm.Utils = Elm.Utils || {};
-Elm.Utils.make = function (_elm) {
-   "use strict";
-   _elm.Utils = _elm.Utils || {};
-   if (_elm.Utils.values) return _elm.Utils.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var _op = {};
-   var isSubset = F2(function (listA,listB) {
-      return _U.cmp($List.length(listA),$List.length(listB)) < 1 && A2($List.all,function (x) {    return A2($List.member,x,listB);},listA);
-   });
-   return _elm.Utils.values = {_op: _op,isSubset: isSubset};
-};Elm.Game = Elm.Game || {};
-Elm.Game.make = function (_elm) {
-   "use strict";
-   _elm.Game = _elm.Game || {};
-   if (_elm.Game.values) return _elm.Game.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Board = Elm.Board.make(_elm),
-   $Common = Elm.Common.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm),
-   $Utils = Elm.Utils.make(_elm);
-   var _op = {};
-   var validMove = F2(function (id,game) {    return A2($List.member,id,A2($Board.movesFor,game.board,$Common.None));});
-   var checkForWinners = function (game) {
-      var moves = A2($Board.movesFor,game.board,game.turn);
-      var didWin = A2($List.any,function (winSet) {    return A2($Utils.isSubset,winSet,moves);},$Board.winningMoves);
-      return _U.eq(didWin,true) ? _U.update(game,{winner: game.turn}) : game;
-   };
-   var switchPlayer = function (turn) {
-      var _p0 = turn;
-      switch (_p0.ctor)
-      {case "Human": return $Common.Computer;
-         case "Computer": return $Common.Human;
-         default: return $Common.None;}
-   };
-   var switchCurrentPlayer = function (game) {    return _U.update(game,{turn: switchPlayer(game.turn)});};
-   var newGame = {turn: $Common.Human
-                 ,board: _U.list([$Common.Empty
-                                 ,$Common.Empty
-                                 ,$Common.Empty
-                                 ,$Common.Empty
-                                 ,$Common.Empty
-                                 ,$Common.Empty
-                                 ,$Common.Empty
-                                 ,$Common.Empty
-                                 ,$Common.Empty])
-                 ,winner: $Common.None
-                 ,state: $Common.Playing};
-   return _elm.Game.values = {_op: _op
-                             ,newGame: newGame
-                             ,switchPlayer: switchPlayer
-                             ,switchCurrentPlayer: switchCurrentPlayer
-                             ,checkForWinners: checkForWinners
-                             ,validMove: validMove};
 };Elm.Main = Elm.Main || {};
 Elm.Main.make = function (_elm) {
    "use strict";
    _elm.Main = _elm.Main || {};
    if (_elm.Main.values) return _elm.Main.values;
    var _U = Elm.Native.Utils.make(_elm),
+   $Ai = Elm.Ai.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Board = Elm.Board.make(_elm),
    $Common = Elm.Common.make(_elm),
@@ -10487,16 +10549,24 @@ Elm.Main.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var makeComputerMove = function (game) {
+      var moveLocation = A2($Ai.bestMove,game.board,game.turn);
+      return _U.update(game,{board: A3($Board.updateBoard,moveLocation,game.turn,game.board)});
+   };
    var update = F2(function (action,game) {
       var _p0 = action;
       if (_p0.ctor === "NoOp") {
             return game;
          } else {
             var _p1 = _p0._0;
-            return A2($Game.validMove,_p1,game) ? $Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,_p1,game))) : game;
+            return A2($Game.validMove,
+            _p1,
+            game) ? $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove($Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,
+            _p1,
+            game)))))) : game;
          }
    });
    var model = A3($Signal.foldp,update,$Game.newGame,$Mailbox.actions.signal);
    var main = A2($Signal.map,$Display.display($Mailbox.actions.address),model);
-   return _elm.Main.values = {_op: _op,update: update,model: model,main: main};
+   return _elm.Main.values = {_op: _op,makeComputerMove: makeComputerMove,update: update,model: model,main: main};
 };</script></head><body><script type="text/javascript">Elm.fullscreen(Elm.Main)</script></body></html>
