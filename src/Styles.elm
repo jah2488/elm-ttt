@@ -12,7 +12,7 @@ boardStyles : State -> Attribute
 boardStyles gameState =
   let
     standardStyles =
-      [ ("width", "510px")
+      [ ("width", "41em")
       , ("margin", "0 auto")
       , ("overflow", "hidden")
       ]
@@ -41,9 +41,17 @@ cellStyles content =
   in
     style
       [ ("margin", "10px")
-      , ("width", "150px")
-      , ("height", "150px")
+      , ("width", "30%")
+      , ("height", "200px")
+      , ("text-align", "center")
+      , ("-webkit-user-select", "none")
+      , ("user-select", "none")
       , ("font-size", "6em")
+      , ("border-radius", "0")
+      , ("-webkit-appearance", "none")
+      , ("padding", "0px")
+      , ("background", "white")
+      , ("border", "2px solid #4A4A4A")
       , contentStyle
       ]
 
