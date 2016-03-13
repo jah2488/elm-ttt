@@ -12,12 +12,12 @@ Elm.Utils.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var getWithDefault = F3(function (key,$default,dict) {    return A2($Maybe.withDefault,$default,A2($Dict.get,key,dict));});
+   var defaultGet = F3(function ($default,x,myDict) {    return A2($Maybe.withDefault,$default,A2($Dict.get,x,myDict));});
    var zipmap = F2(function (listA,listB) {
       return $Dict.fromList(A3($List.map2,F2(function (la,lb) {    return {ctor: "_Tuple2",_0: la,_1: lb};}),listA,listB));
    });
    var isSubset = F2(function (listA,listB) {
       return _U.cmp($List.length(listA),$List.length(listB)) < 1 && A2($List.all,function (x) {    return A2($List.member,x,listB);},listA);
    });
-   return _elm.Utils.values = {_op: _op,isSubset: isSubset,zipmap: zipmap,getWithDefault: getWithDefault};
+   return _elm.Utils.values = {_op: _op,isSubset: isSubset,zipmap: zipmap,defaultGet: defaultGet};
 };

@@ -12,4 +12,5 @@ type alias Game =
   , board: List Cell
   , winner: Player
   , state: State
+  , message: String
   }

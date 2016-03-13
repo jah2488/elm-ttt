@@ -27,7 +27,10 @@ Elm.Game.make = function (_elm) {
          case "Computer": return $Common.Human;
          default: return $Common.None;}
    };
-   var switchCurrentPlayer = function (game) {    return _U.update(game,{turn: switchPlayer(game.turn)});};
+   var switchCurrentPlayer = function (game) {
+      var newMessage = _U.eq(game.turn,$Common.Human) ? "Computer is thinking" : _U.eq(game.turn,$Common.Computer) ? "Your Move" : "...";
+      return _U.update(game,{turn: switchPlayer(game.turn),message: newMessage});
+   };
    var newGame = {turn: $Common.Human
                  ,board: _U.list([$Common.Empty
                                  ,$Common.Empty
@@ -39,7 +42,8 @@ Elm.Game.make = function (_elm) {
                                  ,$Common.Empty
                                  ,$Common.Empty])
                  ,winner: $Common.None
-                 ,state: $Common.Playing};
+                 ,state: $Common.Playing
+                 ,message: "Pick your starting move"};
    return _elm.Game.values = {_op: _op
                              ,newGame: newGame
                              ,switchPlayer: switchPlayer

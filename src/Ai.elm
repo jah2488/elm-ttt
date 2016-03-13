@@ -18,7 +18,7 @@ bestMove : List Cell -> Player -> Int
 bestMove board player =
   let
     defaultWinScore = 1
-    unFoundMoveDefault = 0
+    default = 0
     moves = (movesFor board None)
     updatedBoard = (\id -> updateBoard id player board)
     rankedBoard = (\id -> rankBoard (updatedBoard id) player defaultWinScore)
@@ -27,11 +27,11 @@ bestMove board player =
     bestScore = scores
       |> Dict.values
       |> List.maximum
-      |> Maybe.withDefault unFoundMoveDefault
-    bestMove = List.filter (\x -> (Dict.get x scores |> Maybe.withDefault unFoundMoveDefault) == bestScore) moves
+      |> Maybe.withDefault default
+    bestMove = List.filter (\x -> (Utils.defaultGet default x scores) == bestScore) moves
   in
     List.head(bestMove)
-      |> Maybe.withDefault unFoundMoveDefault
+      |> Maybe.withDefault default
 
 rankBoard : List Cell -> Player -> Int -> Int
 rankBoard board player winScore =
