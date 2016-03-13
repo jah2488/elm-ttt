@@ -5909,6 +5909,103 @@ Elm.String.make = function (_elm) {
                                ,any: any
                                ,all: all};
 };
+Elm.Console = Elm.Console || {};
+Elm.Console.Core = Elm.Console.Core || {};
+Elm.Console.Core.make = function (_elm) {
+   "use strict";
+   _elm.Console = _elm.Console || {};
+   _elm.Console.Core = _elm.Console.Core || {};
+   if (_elm.Console.Core.values) return _elm.Console.Core.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var Impure = function (a) {    return {ctor: "Impure",_0: a};};
+   var Pure = function (a) {    return {ctor: "Pure",_0: a};};
+   var WriteF = F2(function (a,b) {    return {ctor: "WriteF",_0: a,_1: b};});
+   var Exit = function (a) {    return {ctor: "Exit",_0: a};};
+   var GetC = function (a) {    return {ctor: "GetC",_0: a};};
+   var PutS = F2(function (a,b) {    return {ctor: "PutS",_0: a,_1: b};});
+   var mapF = F2(function (f,iof) {
+      var _p0 = iof;
+      switch (_p0.ctor)
+      {case "PutS": return A2(PutS,_p0._0,function (_p1) {    return f(_p0._1(_p1));});
+         case "GetC": return GetC(function (_p2) {    return f(_p0._0(_p2));});
+         case "Exit": return Exit(_p0._0);
+         default: return A2(WriteF,_p0._0,function (_p3) {    return f(_p0._1(_p3));});}
+   });
+   var andThen = F2(function (io,f) {
+      var _p4 = io;
+      if (_p4.ctor === "Pure") {
+            return f(_p4._0);
+         } else {
+            return Impure(A2(mapF,A2($Basics.flip,andThen,f),_p4._0));
+         }
+   });
+   _op[">>="] = andThen;
+   var seq = F2(function (x,y) {    return A2(_op[">>="],x,function (_p5) {    return y;});});
+   _op[">>>"] = seq;
+   var forever = function (m) {    return A2(_op[">>="],m,function (_p6) {    return forever(m);});};
+   var pure = Pure;
+   var apply = F2(function (iof,iom) {    return A2(_op[">>="],iof,function (f) {    return A2(_op[">>="],iom,function (m) {    return pure(f(m));});});});
+   _op["<*>"] = apply;
+   var mapIO = F2(function (f,xs) {    return A3($List.foldr,function (_p7) {    return seq(f(_p7));},pure({ctor: "_Tuple0"}),xs);});
+   var forEach = F2(function (xs,f) {    return A2(mapIO,f,xs);});
+   var map2 = F3(function (f,a,b) {    return A2(andThen,a,function (x) {    return A2(andThen,b,function (y) {    return pure(A2(f,x,y));});});});
+   var sequenceMany = function (ios) {
+      var _p8 = ios;
+      if (_p8.ctor === "[]") {
+            return pure(_U.list([]));
+         } else {
+            return A3(map2,F2(function (x,y) {    return A2($List._op["::"],x,y);}),_p8._0,sequenceMany(_p8._1));
+         }
+   };
+   var map = F2(function (f,io) {    var _p9 = io;if (_p9.ctor === "Pure") {    return Pure(f(_p9._0));} else {    return Impure(A2(mapF,map(f),_p9._0));}});
+   var writeFile = function (obj) {    return Impure(A2(WriteF,obj,function (_p10) {    return Pure({ctor: "_Tuple0"});}));};
+   var putStr = function (s) {    return Impure(A2(PutS,s,function (_p11) {    return Pure({ctor: "_Tuple0"});}));};
+   var exit = function (_p12) {    return Impure(Exit(_p12));};
+   var getChar = Impure(GetC(Pure));
+   var readUntil = function (end) {
+      var go = function (s) {
+         return A2(_op[">>="],getChar,function (c) {    return _U.eq(c,end) ? pure(s) : go(A2($String.append,s,A2($String.cons,c,"")));});
+      };
+      return go("");
+   };
+   var getLine = readUntil(_U.chr("\n"));
+   var putChar = function (c) {    return Impure(A2(PutS,A2($String.cons,c,""),function (_p13) {    return Pure({ctor: "_Tuple0"});}));};
+   var putStrLn = function (s) {    return A2(_op[">>>"],putStr(s),putChar(_U.chr("\n")));};
+   return _elm.Console.Core.values = {_op: _op
+                                     ,putChar: putChar
+                                     ,getChar: getChar
+                                     ,exit: exit
+                                     ,putStr: putStr
+                                     ,putStrLn: putStrLn
+                                     ,readUntil: readUntil
+                                     ,writeFile: writeFile
+                                     ,getLine: getLine
+                                     ,map: map
+                                     ,map2: map2
+                                     ,mapIO: mapIO
+                                     ,forEach: forEach
+                                     ,pure: pure
+                                     ,apply: apply
+                                     ,andThen: andThen
+                                     ,seq: seq
+                                     ,sequenceMany: sequenceMany
+                                     ,forever: forever
+                                     ,PutS: PutS
+                                     ,GetC: GetC
+                                     ,Exit: Exit
+                                     ,WriteF: WriteF
+                                     ,Pure: Pure
+                                     ,Impure: Impure
+                                     ,mapF: mapF};
+};
 Elm.Dict = Elm.Dict || {};
 Elm.Dict.make = function (_elm) {
    "use strict";
@@ -8129,2162 +8226,824 @@ Elm.Json.Decode.make = function (_elm) {
                                     ,value: value
                                     ,customDecoder: customDecoder};
 };
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-
-},{}],2:[function(require,module,exports){
-(function (global){
-var topLevel = typeof global !== 'undefined' ? global :
-    typeof window !== 'undefined' ? window : {}
-var minDoc = require('min-document');
-
-if (typeof document !== 'undefined') {
-    module.exports = document;
-} else {
-    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
-
-    if (!doccy) {
-        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
-    }
-
-    module.exports = doccy;
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":1}],3:[function(require,module,exports){
-"use strict";
-
-module.exports = function isObject(x) {
-	return typeof x === "object" && x !== null;
-};
-
-},{}],4:[function(require,module,exports){
-var nativeIsArray = Array.isArray
-var toString = Object.prototype.toString
-
-module.exports = nativeIsArray || isArray
-
-function isArray(obj) {
-    return toString.call(obj) === "[object Array]"
-}
-
-},{}],5:[function(require,module,exports){
-var isObject = require("is-object")
-var isHook = require("../vnode/is-vhook.js")
-
-module.exports = applyProperties
-
-function applyProperties(node, props, previous) {
-    for (var propName in props) {
-        var propValue = props[propName]
-
-        if (propValue === undefined) {
-            removeProperty(node, propName, propValue, previous);
-        } else if (isHook(propValue)) {
-            removeProperty(node, propName, propValue, previous)
-            if (propValue.hook) {
-                propValue.hook(node,
-                    propName,
-                    previous ? previous[propName] : undefined)
-            }
-        } else {
-            if (isObject(propValue)) {
-                patchObject(node, props, previous, propName, propValue);
-            } else {
-                node[propName] = propValue
-            }
-        }
-    }
-}
-
-function removeProperty(node, propName, propValue, previous) {
-    if (previous) {
-        var previousValue = previous[propName]
-
-        if (!isHook(previousValue)) {
-            if (propName === "attributes") {
-                for (var attrName in previousValue) {
-                    node.removeAttribute(attrName)
-                }
-            } else if (propName === "style") {
-                for (var i in previousValue) {
-                    node.style[i] = ""
-                }
-            } else if (typeof previousValue === "string") {
-                node[propName] = ""
-            } else {
-                node[propName] = null
-            }
-        } else if (previousValue.unhook) {
-            previousValue.unhook(node, propName, propValue)
-        }
-    }
-}
-
-function patchObject(node, props, previous, propName, propValue) {
-    var previousValue = previous ? previous[propName] : undefined
-
-    // Set attributes
-    if (propName === "attributes") {
-        for (var attrName in propValue) {
-            var attrValue = propValue[attrName]
-
-            if (attrValue === undefined) {
-                node.removeAttribute(attrName)
-            } else {
-                node.setAttribute(attrName, attrValue)
-            }
-        }
-
-        return
-    }
-
-    if(previousValue && isObject(previousValue) &&
-        getPrototype(previousValue) !== getPrototype(propValue)) {
-        node[propName] = propValue
-        return
-    }
-
-    if (!isObject(node[propName])) {
-        node[propName] = {}
-    }
-
-    var replacer = propName === "style" ? "" : undefined
-
-    for (var k in propValue) {
-        var value = propValue[k]
-        node[propName][k] = (value === undefined) ? replacer : value
-    }
-}
-
-function getPrototype(value) {
-    if (Object.getPrototypeOf) {
-        return Object.getPrototypeOf(value)
-    } else if (value.__proto__) {
-        return value.__proto__
-    } else if (value.constructor) {
-        return value.constructor.prototype
-    }
-}
-
-},{"../vnode/is-vhook.js":13,"is-object":3}],6:[function(require,module,exports){
-var document = require("global/document")
-
-var applyProperties = require("./apply-properties")
-
-var isVNode = require("../vnode/is-vnode.js")
-var isVText = require("../vnode/is-vtext.js")
-var isWidget = require("../vnode/is-widget.js")
-var handleThunk = require("../vnode/handle-thunk.js")
-
-module.exports = createElement
-
-function createElement(vnode, opts) {
-    var doc = opts ? opts.document || document : document
-    var warn = opts ? opts.warn : null
-
-    vnode = handleThunk(vnode).a
-
-    if (isWidget(vnode)) {
-        return vnode.init()
-    } else if (isVText(vnode)) {
-        return doc.createTextNode(vnode.text)
-    } else if (!isVNode(vnode)) {
-        if (warn) {
-            warn("Item is not a valid virtual dom node", vnode)
-        }
-        return null
-    }
-
-    var node = (vnode.namespace === null) ?
-        doc.createElement(vnode.tagName) :
-        doc.createElementNS(vnode.namespace, vnode.tagName)
-
-    var props = vnode.properties
-    applyProperties(node, props)
-
-    var children = vnode.children
-
-    for (var i = 0; i < children.length; i++) {
-        var childNode = createElement(children[i], opts)
-        if (childNode) {
-            node.appendChild(childNode)
-        }
-    }
-
-    return node
-}
-
-},{"../vnode/handle-thunk.js":11,"../vnode/is-vnode.js":14,"../vnode/is-vtext.js":15,"../vnode/is-widget.js":16,"./apply-properties":5,"global/document":2}],7:[function(require,module,exports){
-// Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
-// We don't want to read all of the DOM nodes in the tree so we use
-// the in-order tree indexing to eliminate recursion down certain branches.
-// We only recurse into a DOM node if we know that it contains a child of
-// interest.
-
-var noChild = {}
-
-module.exports = domIndex
-
-function domIndex(rootNode, tree, indices, nodes) {
-    if (!indices || indices.length === 0) {
-        return {}
-    } else {
-        indices.sort(ascending)
-        return recurse(rootNode, tree, indices, nodes, 0)
-    }
-}
-
-function recurse(rootNode, tree, indices, nodes, rootIndex) {
-    nodes = nodes || {}
-
-
-    if (rootNode) {
-        if (indexInRange(indices, rootIndex, rootIndex)) {
-            nodes[rootIndex] = rootNode
-        }
-
-        var vChildren = tree.children
-
-        if (vChildren) {
-
-            var childNodes = rootNode.childNodes
-
-            for (var i = 0; i < tree.children.length; i++) {
-                rootIndex += 1
-
-                var vChild = vChildren[i] || noChild
-                var nextIndex = rootIndex + (vChild.count || 0)
-
-                // skip recursion down the tree if there are no nodes down here
-                if (indexInRange(indices, rootIndex, nextIndex)) {
-                    recurse(childNodes[i], vChild, indices, nodes, rootIndex)
-                }
-
-                rootIndex = nextIndex
-            }
-        }
-    }
-
-    return nodes
-}
-
-// Binary search for an index in the interval [left, right]
-function indexInRange(indices, left, right) {
-    if (indices.length === 0) {
-        return false
-    }
-
-    var minIndex = 0
-    var maxIndex = indices.length - 1
-    var currentIndex
-    var currentItem
-
-    while (minIndex <= maxIndex) {
-        currentIndex = ((maxIndex + minIndex) / 2) >> 0
-        currentItem = indices[currentIndex]
-
-        if (minIndex === maxIndex) {
-            return currentItem >= left && currentItem <= right
-        } else if (currentItem < left) {
-            minIndex = currentIndex + 1
-        } else  if (currentItem > right) {
-            maxIndex = currentIndex - 1
-        } else {
-            return true
-        }
-    }
-
-    return false;
-}
-
-function ascending(a, b) {
-    return a > b ? 1 : -1
-}
-
-},{}],8:[function(require,module,exports){
-var applyProperties = require("./apply-properties")
-
-var isWidget = require("../vnode/is-widget.js")
-var VPatch = require("../vnode/vpatch.js")
-
-var render = require("./create-element")
-var updateWidget = require("./update-widget")
-
-module.exports = applyPatch
-
-function applyPatch(vpatch, domNode, renderOptions) {
-    var type = vpatch.type
-    var vNode = vpatch.vNode
-    var patch = vpatch.patch
-
-    switch (type) {
-        case VPatch.REMOVE:
-            return removeNode(domNode, vNode)
-        case VPatch.INSERT:
-            return insertNode(domNode, patch, renderOptions)
-        case VPatch.VTEXT:
-            return stringPatch(domNode, vNode, patch, renderOptions)
-        case VPatch.WIDGET:
-            return widgetPatch(domNode, vNode, patch, renderOptions)
-        case VPatch.VNODE:
-            return vNodePatch(domNode, vNode, patch, renderOptions)
-        case VPatch.ORDER:
-            reorderChildren(domNode, patch)
-            return domNode
-        case VPatch.PROPS:
-            applyProperties(domNode, patch, vNode.properties)
-            return domNode
-        case VPatch.THUNK:
-            return replaceRoot(domNode,
-                renderOptions.patch(domNode, patch, renderOptions))
-        default:
-            return domNode
-    }
-}
-
-function removeNode(domNode, vNode) {
-    var parentNode = domNode.parentNode
-
-    if (parentNode) {
-        parentNode.removeChild(domNode)
-    }
-
-    destroyWidget(domNode, vNode);
-
-    return null
-}
-
-function insertNode(parentNode, vNode, renderOptions) {
-    var newNode = render(vNode, renderOptions)
-
-    if (parentNode) {
-        parentNode.appendChild(newNode)
-    }
-
-    return parentNode
-}
-
-function stringPatch(domNode, leftVNode, vText, renderOptions) {
-    var newNode
-
-    if (domNode.nodeType === 3) {
-        domNode.replaceData(0, domNode.length, vText.text)
-        newNode = domNode
-    } else {
-        var parentNode = domNode.parentNode
-        newNode = render(vText, renderOptions)
-
-        if (parentNode && newNode !== domNode) {
-            parentNode.replaceChild(newNode, domNode)
-        }
-    }
-
-    return newNode
-}
-
-function widgetPatch(domNode, leftVNode, widget, renderOptions) {
-    var updating = updateWidget(leftVNode, widget)
-    var newNode
-
-    if (updating) {
-        newNode = widget.update(leftVNode, domNode) || domNode
-    } else {
-        newNode = render(widget, renderOptions)
-    }
-
-    var parentNode = domNode.parentNode
-
-    if (parentNode && newNode !== domNode) {
-        parentNode.replaceChild(newNode, domNode)
-    }
-
-    if (!updating) {
-        destroyWidget(domNode, leftVNode)
-    }
-
-    return newNode
-}
-
-function vNodePatch(domNode, leftVNode, vNode, renderOptions) {
-    var parentNode = domNode.parentNode
-    var newNode = render(vNode, renderOptions)
-
-    if (parentNode && newNode !== domNode) {
-        parentNode.replaceChild(newNode, domNode)
-    }
-
-    return newNode
-}
-
-function destroyWidget(domNode, w) {
-    if (typeof w.destroy === "function" && isWidget(w)) {
-        w.destroy(domNode)
-    }
-}
-
-function reorderChildren(domNode, moves) {
-    var childNodes = domNode.childNodes
-    var keyMap = {}
-    var node
-    var remove
-    var insert
-
-    for (var i = 0; i < moves.removes.length; i++) {
-        remove = moves.removes[i]
-        node = childNodes[remove.from]
-        if (remove.key) {
-            keyMap[remove.key] = node
-        }
-        domNode.removeChild(node)
-    }
-
-    var length = childNodes.length
-    for (var j = 0; j < moves.inserts.length; j++) {
-        insert = moves.inserts[j]
-        node = keyMap[insert.key]
-        // this is the weirdest bug i've ever seen in webkit
-        domNode.insertBefore(node, insert.to >= length++ ? null : childNodes[insert.to])
-    }
-}
-
-function replaceRoot(oldRoot, newRoot) {
-    if (oldRoot && newRoot && oldRoot !== newRoot && oldRoot.parentNode) {
-        oldRoot.parentNode.replaceChild(newRoot, oldRoot)
-    }
-
-    return newRoot;
-}
-
-},{"../vnode/is-widget.js":16,"../vnode/vpatch.js":19,"./apply-properties":5,"./create-element":6,"./update-widget":10}],9:[function(require,module,exports){
-var document = require("global/document")
-var isArray = require("x-is-array")
-
-var domIndex = require("./dom-index")
-var patchOp = require("./patch-op")
-module.exports = patch
-
-function patch(rootNode, patches) {
-    return patchRecursive(rootNode, patches)
-}
-
-function patchRecursive(rootNode, patches, renderOptions) {
-    var indices = patchIndices(patches)
-
-    if (indices.length === 0) {
-        return rootNode
-    }
-
-    var index = domIndex(rootNode, patches.a, indices)
-    var ownerDocument = rootNode.ownerDocument
-
-    if (!renderOptions) {
-        renderOptions = { patch: patchRecursive }
-        if (ownerDocument !== document) {
-            renderOptions.document = ownerDocument
-        }
-    }
-
-    for (var i = 0; i < indices.length; i++) {
-        var nodeIndex = indices[i]
-        rootNode = applyPatch(rootNode,
-            index[nodeIndex],
-            patches[nodeIndex],
-            renderOptions)
-    }
-
-    return rootNode
-}
-
-function applyPatch(rootNode, domNode, patchList, renderOptions) {
-    if (!domNode) {
-        return rootNode
-    }
-
-    var newNode
-
-    if (isArray(patchList)) {
-        for (var i = 0; i < patchList.length; i++) {
-            newNode = patchOp(patchList[i], domNode, renderOptions)
-
-            if (domNode === rootNode) {
-                rootNode = newNode
-            }
-        }
-    } else {
-        newNode = patchOp(patchList, domNode, renderOptions)
-
-        if (domNode === rootNode) {
-            rootNode = newNode
-        }
-    }
-
-    return rootNode
-}
-
-function patchIndices(patches) {
-    var indices = []
-
-    for (var key in patches) {
-        if (key !== "a") {
-            indices.push(Number(key))
-        }
-    }
-
-    return indices
-}
-
-},{"./dom-index":7,"./patch-op":8,"global/document":2,"x-is-array":4}],10:[function(require,module,exports){
-var isWidget = require("../vnode/is-widget.js")
-
-module.exports = updateWidget
-
-function updateWidget(a, b) {
-    if (isWidget(a) && isWidget(b)) {
-        if ("name" in a && "name" in b) {
-            return a.id === b.id
-        } else {
-            return a.init === b.init
-        }
-    }
-
-    return false
-}
-
-},{"../vnode/is-widget.js":16}],11:[function(require,module,exports){
-var isVNode = require("./is-vnode")
-var isVText = require("./is-vtext")
-var isWidget = require("./is-widget")
-var isThunk = require("./is-thunk")
-
-module.exports = handleThunk
-
-function handleThunk(a, b) {
-    var renderedA = a
-    var renderedB = b
-
-    if (isThunk(b)) {
-        renderedB = renderThunk(b, a)
-    }
-
-    if (isThunk(a)) {
-        renderedA = renderThunk(a, null)
-    }
-
-    return {
-        a: renderedA,
-        b: renderedB
-    }
-}
-
-function renderThunk(thunk, previous) {
-    var renderedThunk = thunk.vnode
-
-    if (!renderedThunk) {
-        renderedThunk = thunk.vnode = thunk.render(previous)
-    }
-
-    if (!(isVNode(renderedThunk) ||
-            isVText(renderedThunk) ||
-            isWidget(renderedThunk))) {
-        throw new Error("thunk did not return a valid node");
-    }
-
-    return renderedThunk
-}
-
-},{"./is-thunk":12,"./is-vnode":14,"./is-vtext":15,"./is-widget":16}],12:[function(require,module,exports){
-module.exports = isThunk
-
-function isThunk(t) {
-    return t && t.type === "Thunk"
-}
-
-},{}],13:[function(require,module,exports){
-module.exports = isHook
-
-function isHook(hook) {
-    return hook &&
-      (typeof hook.hook === "function" && !hook.hasOwnProperty("hook") ||
-       typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
-}
-
-},{}],14:[function(require,module,exports){
-var version = require("./version")
-
-module.exports = isVirtualNode
-
-function isVirtualNode(x) {
-    return x && x.type === "VirtualNode" && x.version === version
-}
-
-},{"./version":17}],15:[function(require,module,exports){
-var version = require("./version")
-
-module.exports = isVirtualText
-
-function isVirtualText(x) {
-    return x && x.type === "VirtualText" && x.version === version
-}
-
-},{"./version":17}],16:[function(require,module,exports){
-module.exports = isWidget
-
-function isWidget(w) {
-    return w && w.type === "Widget"
-}
-
-},{}],17:[function(require,module,exports){
-module.exports = "2"
-
-},{}],18:[function(require,module,exports){
-var version = require("./version")
-var isVNode = require("./is-vnode")
-var isWidget = require("./is-widget")
-var isThunk = require("./is-thunk")
-var isVHook = require("./is-vhook")
-
-module.exports = VirtualNode
-
-var noProperties = {}
-var noChildren = []
-
-function VirtualNode(tagName, properties, children, key, namespace) {
-    this.tagName = tagName
-    this.properties = properties || noProperties
-    this.children = children || noChildren
-    this.key = key != null ? String(key) : undefined
-    this.namespace = (typeof namespace === "string") ? namespace : null
-
-    var count = (children && children.length) || 0
-    var descendants = 0
-    var hasWidgets = false
-    var hasThunks = false
-    var descendantHooks = false
-    var hooks
-
-    for (var propName in properties) {
-        if (properties.hasOwnProperty(propName)) {
-            var property = properties[propName]
-            if (isVHook(property) && property.unhook) {
-                if (!hooks) {
-                    hooks = {}
-                }
-
-                hooks[propName] = property
-            }
-        }
-    }
-
-    for (var i = 0; i < count; i++) {
-        var child = children[i]
-        if (isVNode(child)) {
-            descendants += child.count || 0
-
-            if (!hasWidgets && child.hasWidgets) {
-                hasWidgets = true
-            }
-
-            if (!hasThunks && child.hasThunks) {
-                hasThunks = true
-            }
-
-            if (!descendantHooks && (child.hooks || child.descendantHooks)) {
-                descendantHooks = true
-            }
-        } else if (!hasWidgets && isWidget(child)) {
-            if (typeof child.destroy === "function") {
-                hasWidgets = true
-            }
-        } else if (!hasThunks && isThunk(child)) {
-            hasThunks = true;
-        }
-    }
-
-    this.count = count + descendants
-    this.hasWidgets = hasWidgets
-    this.hasThunks = hasThunks
-    this.hooks = hooks
-    this.descendantHooks = descendantHooks
-}
-
-VirtualNode.prototype.version = version
-VirtualNode.prototype.type = "VirtualNode"
-
-},{"./is-thunk":12,"./is-vhook":13,"./is-vnode":14,"./is-widget":16,"./version":17}],19:[function(require,module,exports){
-var version = require("./version")
-
-VirtualPatch.NONE = 0
-VirtualPatch.VTEXT = 1
-VirtualPatch.VNODE = 2
-VirtualPatch.WIDGET = 3
-VirtualPatch.PROPS = 4
-VirtualPatch.ORDER = 5
-VirtualPatch.INSERT = 6
-VirtualPatch.REMOVE = 7
-VirtualPatch.THUNK = 8
-
-module.exports = VirtualPatch
-
-function VirtualPatch(type, vNode, patch) {
-    this.type = Number(type)
-    this.vNode = vNode
-    this.patch = patch
-}
-
-VirtualPatch.prototype.version = version
-VirtualPatch.prototype.type = "VirtualPatch"
-
-},{"./version":17}],20:[function(require,module,exports){
-var version = require("./version")
-
-module.exports = VirtualText
-
-function VirtualText(text) {
-    this.text = String(text)
-}
-
-VirtualText.prototype.version = version
-VirtualText.prototype.type = "VirtualText"
-
-},{"./version":17}],21:[function(require,module,exports){
-var isObject = require("is-object")
-var isHook = require("../vnode/is-vhook")
-
-module.exports = diffProps
-
-function diffProps(a, b) {
-    var diff
-
-    for (var aKey in a) {
-        if (!(aKey in b)) {
-            diff = diff || {}
-            diff[aKey] = undefined
-        }
-
-        var aValue = a[aKey]
-        var bValue = b[aKey]
-
-        if (aValue === bValue) {
-            continue
-        } else if (isObject(aValue) && isObject(bValue)) {
-            if (getPrototype(bValue) !== getPrototype(aValue)) {
-                diff = diff || {}
-                diff[aKey] = bValue
-            } else if (isHook(bValue)) {
-                 diff = diff || {}
-                 diff[aKey] = bValue
-            } else {
-                var objectDiff = diffProps(aValue, bValue)
-                if (objectDiff) {
-                    diff = diff || {}
-                    diff[aKey] = objectDiff
-                }
-            }
-        } else {
-            diff = diff || {}
-            diff[aKey] = bValue
-        }
-    }
-
-    for (var bKey in b) {
-        if (!(bKey in a)) {
-            diff = diff || {}
-            diff[bKey] = b[bKey]
-        }
-    }
-
-    return diff
-}
-
-function getPrototype(value) {
-  if (Object.getPrototypeOf) {
-    return Object.getPrototypeOf(value)
-  } else if (value.__proto__) {
-    return value.__proto__
-  } else if (value.constructor) {
-    return value.constructor.prototype
-  }
-}
-
-},{"../vnode/is-vhook":13,"is-object":3}],22:[function(require,module,exports){
-var isArray = require("x-is-array")
-
-var VPatch = require("../vnode/vpatch")
-var isVNode = require("../vnode/is-vnode")
-var isVText = require("../vnode/is-vtext")
-var isWidget = require("../vnode/is-widget")
-var isThunk = require("../vnode/is-thunk")
-var handleThunk = require("../vnode/handle-thunk")
-
-var diffProps = require("./diff-props")
-
-module.exports = diff
-
-function diff(a, b) {
-    var patch = { a: a }
-    walk(a, b, patch, 0)
-    return patch
-}
-
-function walk(a, b, patch, index) {
-    if (a === b) {
-        return
-    }
-
-    var apply = patch[index]
-    var applyClear = false
-
-    if (isThunk(a) || isThunk(b)) {
-        thunks(a, b, patch, index)
-    } else if (b == null) {
-
-        // If a is a widget we will add a remove patch for it
-        // Otherwise any child widgets/hooks must be destroyed.
-        // This prevents adding two remove patches for a widget.
-        if (!isWidget(a)) {
-            clearState(a, patch, index)
-            apply = patch[index]
-        }
-
-        apply = appendPatch(apply, new VPatch(VPatch.REMOVE, a, b))
-    } else if (isVNode(b)) {
-        if (isVNode(a)) {
-            if (a.tagName === b.tagName &&
-                a.namespace === b.namespace &&
-                a.key === b.key) {
-                var propsPatch = diffProps(a.properties, b.properties)
-                if (propsPatch) {
-                    apply = appendPatch(apply,
-                        new VPatch(VPatch.PROPS, a, propsPatch))
-                }
-                apply = diffChildren(a, b, patch, apply, index)
-            } else {
-                apply = appendPatch(apply, new VPatch(VPatch.VNODE, a, b))
-                applyClear = true
-            }
-        } else {
-            apply = appendPatch(apply, new VPatch(VPatch.VNODE, a, b))
-            applyClear = true
-        }
-    } else if (isVText(b)) {
-        if (!isVText(a)) {
-            apply = appendPatch(apply, new VPatch(VPatch.VTEXT, a, b))
-            applyClear = true
-        } else if (a.text !== b.text) {
-            apply = appendPatch(apply, new VPatch(VPatch.VTEXT, a, b))
-        }
-    } else if (isWidget(b)) {
-        if (!isWidget(a)) {
-            applyClear = true
-        }
-
-        apply = appendPatch(apply, new VPatch(VPatch.WIDGET, a, b))
-    }
-
-    if (apply) {
-        patch[index] = apply
-    }
-
-    if (applyClear) {
-        clearState(a, patch, index)
-    }
-}
-
-function diffChildren(a, b, patch, apply, index) {
-    var aChildren = a.children
-    var orderedSet = reorder(aChildren, b.children)
-    var bChildren = orderedSet.children
-
-    var aLen = aChildren.length
-    var bLen = bChildren.length
-    var len = aLen > bLen ? aLen : bLen
-
-    for (var i = 0; i < len; i++) {
-        var leftNode = aChildren[i]
-        var rightNode = bChildren[i]
-        index += 1
-
-        if (!leftNode) {
-            if (rightNode) {
-                // Excess nodes in b need to be added
-                apply = appendPatch(apply,
-                    new VPatch(VPatch.INSERT, null, rightNode))
-            }
-        } else {
-            walk(leftNode, rightNode, patch, index)
-        }
-
-        if (isVNode(leftNode) && leftNode.count) {
-            index += leftNode.count
-        }
-    }
-
-    if (orderedSet.moves) {
-        // Reorder nodes last
-        apply = appendPatch(apply, new VPatch(
-            VPatch.ORDER,
-            a,
-            orderedSet.moves
-        ))
-    }
-
-    return apply
-}
-
-function clearState(vNode, patch, index) {
-    // TODO: Make this a single walk, not two
-    unhook(vNode, patch, index)
-    destroyWidgets(vNode, patch, index)
-}
-
-// Patch records for all destroyed widgets must be added because we need
-// a DOM node reference for the destroy function
-function destroyWidgets(vNode, patch, index) {
-    if (isWidget(vNode)) {
-        if (typeof vNode.destroy === "function") {
-            patch[index] = appendPatch(
-                patch[index],
-                new VPatch(VPatch.REMOVE, vNode, null)
-            )
-        }
-    } else if (isVNode(vNode) && (vNode.hasWidgets || vNode.hasThunks)) {
-        var children = vNode.children
-        var len = children.length
-        for (var i = 0; i < len; i++) {
-            var child = children[i]
-            index += 1
-
-            destroyWidgets(child, patch, index)
-
-            if (isVNode(child) && child.count) {
-                index += child.count
-            }
-        }
-    } else if (isThunk(vNode)) {
-        thunks(vNode, null, patch, index)
-    }
-}
-
-// Create a sub-patch for thunks
-function thunks(a, b, patch, index) {
-    var nodes = handleThunk(a, b)
-    var thunkPatch = diff(nodes.a, nodes.b)
-    if (hasPatches(thunkPatch)) {
-        patch[index] = new VPatch(VPatch.THUNK, null, thunkPatch)
-    }
-}
-
-function hasPatches(patch) {
-    for (var index in patch) {
-        if (index !== "a") {
-            return true
-        }
-    }
-
-    return false
-}
-
-// Execute hooks when two nodes are identical
-function unhook(vNode, patch, index) {
-    if (isVNode(vNode)) {
-        if (vNode.hooks) {
-            patch[index] = appendPatch(
-                patch[index],
-                new VPatch(
-                    VPatch.PROPS,
-                    vNode,
-                    undefinedKeys(vNode.hooks)
-                )
-            )
-        }
-
-        if (vNode.descendantHooks || vNode.hasThunks) {
-            var children = vNode.children
-            var len = children.length
-            for (var i = 0; i < len; i++) {
-                var child = children[i]
-                index += 1
-
-                unhook(child, patch, index)
-
-                if (isVNode(child) && child.count) {
-                    index += child.count
-                }
-            }
-        }
-    } else if (isThunk(vNode)) {
-        thunks(vNode, null, patch, index)
-    }
-}
-
-function undefinedKeys(obj) {
-    var result = {}
-
-    for (var key in obj) {
-        result[key] = undefined
-    }
-
-    return result
-}
-
-// List diff, naive left to right reordering
-function reorder(aChildren, bChildren) {
-    // O(M) time, O(M) memory
-    var bChildIndex = keyIndex(bChildren)
-    var bKeys = bChildIndex.keys
-    var bFree = bChildIndex.free
-
-    if (bFree.length === bChildren.length) {
-        return {
-            children: bChildren,
-            moves: null
-        }
-    }
-
-    // O(N) time, O(N) memory
-    var aChildIndex = keyIndex(aChildren)
-    var aKeys = aChildIndex.keys
-    var aFree = aChildIndex.free
-
-    if (aFree.length === aChildren.length) {
-        return {
-            children: bChildren,
-            moves: null
-        }
-    }
-
-    // O(MAX(N, M)) memory
-    var newChildren = []
-
-    var freeIndex = 0
-    var freeCount = bFree.length
-    var deletedItems = 0
-
-    // Iterate through a and match a node in b
-    // O(N) time,
-    for (var i = 0 ; i < aChildren.length; i++) {
-        var aItem = aChildren[i]
-        var itemIndex
-
-        if (aItem.key) {
-            if (bKeys.hasOwnProperty(aItem.key)) {
-                // Match up the old keys
-                itemIndex = bKeys[aItem.key]
-                newChildren.push(bChildren[itemIndex])
-
-            } else {
-                // Remove old keyed items
-                itemIndex = i - deletedItems++
-                newChildren.push(null)
-            }
-        } else {
-            // Match the item in a with the next free item in b
-            if (freeIndex < freeCount) {
-                itemIndex = bFree[freeIndex++]
-                newChildren.push(bChildren[itemIndex])
-            } else {
-                // There are no free items in b to match with
-                // the free items in a, so the extra free nodes
-                // are deleted.
-                itemIndex = i - deletedItems++
-                newChildren.push(null)
-            }
-        }
-    }
-
-    var lastFreeIndex = freeIndex >= bFree.length ?
-        bChildren.length :
-        bFree[freeIndex]
-
-    // Iterate through b and append any new keys
-    // O(M) time
-    for (var j = 0; j < bChildren.length; j++) {
-        var newItem = bChildren[j]
-
-        if (newItem.key) {
-            if (!aKeys.hasOwnProperty(newItem.key)) {
-                // Add any new keyed items
-                // We are adding new items to the end and then sorting them
-                // in place. In future we should insert new items in place.
-                newChildren.push(newItem)
-            }
-        } else if (j >= lastFreeIndex) {
-            // Add any leftover non-keyed items
-            newChildren.push(newItem)
-        }
-    }
-
-    var simulate = newChildren.slice()
-    var simulateIndex = 0
-    var removes = []
-    var inserts = []
-    var simulateItem
-
-    for (var k = 0; k < bChildren.length;) {
-        var wantedItem = bChildren[k]
-        simulateItem = simulate[simulateIndex]
-
-        // remove items
-        while (simulateItem === null && simulate.length) {
-            removes.push(remove(simulate, simulateIndex, null))
-            simulateItem = simulate[simulateIndex]
-        }
-
-        if (!simulateItem || simulateItem.key !== wantedItem.key) {
-            // if we need a key in this position...
-            if (wantedItem.key) {
-                if (simulateItem && simulateItem.key) {
-                    // if an insert doesn't put this key in place, it needs to move
-                    if (bKeys[simulateItem.key] !== k + 1) {
-                        removes.push(remove(simulate, simulateIndex, simulateItem.key))
-                        simulateItem = simulate[simulateIndex]
-                        // if the remove didn't put the wanted item in place, we need to insert it
-                        if (!simulateItem || simulateItem.key !== wantedItem.key) {
-                            inserts.push({key: wantedItem.key, to: k})
-                        }
-                        // items are matching, so skip ahead
-                        else {
-                            simulateIndex++
-                        }
-                    }
-                    else {
-                        inserts.push({key: wantedItem.key, to: k})
-                    }
-                }
-                else {
-                    inserts.push({key: wantedItem.key, to: k})
-                }
-                k++
-            }
-            // a key in simulate has no matching wanted key, remove it
-            else if (simulateItem && simulateItem.key) {
-                removes.push(remove(simulate, simulateIndex, simulateItem.key))
-            }
-        }
-        else {
-            simulateIndex++
-            k++
-        }
-    }
-
-    // remove all the remaining nodes from simulate
-    while(simulateIndex < simulate.length) {
-        simulateItem = simulate[simulateIndex]
-        removes.push(remove(simulate, simulateIndex, simulateItem && simulateItem.key))
-    }
-
-    // If the only moves we have are deletes then we can just
-    // let the delete patch remove these items.
-    if (removes.length === deletedItems && !inserts.length) {
-        return {
-            children: newChildren,
-            moves: null
-        }
-    }
-
-    return {
-        children: newChildren,
-        moves: {
-            removes: removes,
-            inserts: inserts
-        }
-    }
-}
-
-function remove(arr, index, key) {
-    arr.splice(index, 1)
-
-    return {
-        from: index,
-        key: key
-    }
-}
-
-function keyIndex(children) {
-    var keys = {}
-    var free = []
-    var length = children.length
-
-    for (var i = 0; i < length; i++) {
-        var child = children[i]
-
-        if (child.key) {
-            keys[child.key] = i
-        } else {
-            free.push(i)
-        }
-    }
-
-    return {
-        keys: keys,     // A hash of key name to index
-        free: free,     // An array of unkeyed item indices
-    }
-}
-
-function appendPatch(apply, patch) {
-    if (apply) {
-        if (isArray(apply)) {
-            apply.push(patch)
-        } else {
-            apply = [apply, patch]
-        }
-
-        return apply
-    } else {
-        return patch
-    }
-}
-
-},{"../vnode/handle-thunk":11,"../vnode/is-thunk":12,"../vnode/is-vnode":14,"../vnode/is-vtext":15,"../vnode/is-widget":16,"../vnode/vpatch":19,"./diff-props":21,"x-is-array":4}],23:[function(require,module,exports){
-var VNode = require('virtual-dom/vnode/vnode');
-var VText = require('virtual-dom/vnode/vtext');
-var diff = require('virtual-dom/vtree/diff');
-var patch = require('virtual-dom/vdom/patch');
-var createElement = require('virtual-dom/vdom/create-element');
-var isHook = require("virtual-dom/vnode/is-vhook");
-
-
-Elm.Native.VirtualDom = {};
-Elm.Native.VirtualDom.make = function(elm)
-{
-	elm.Native = elm.Native || {};
-	elm.Native.VirtualDom = elm.Native.VirtualDom || {};
-	if (elm.Native.VirtualDom.values)
-	{
-		return elm.Native.VirtualDom.values;
-	}
-
-	var Element = Elm.Native.Graphics.Element.make(elm);
-	var Json = Elm.Native.Json.make(elm);
-	var List = Elm.Native.List.make(elm);
-	var Signal = Elm.Native.Signal.make(elm);
-	var Utils = Elm.Native.Utils.make(elm);
-
-	var ATTRIBUTE_KEY = 'UniqueNameThatOthersAreVeryUnlikelyToUse';
-
-
-
-	// VIRTUAL DOM NODES
-
-
-	function text(string)
-	{
-		return new VText(string);
-	}
-
-	function node(name)
-	{
-		return F2(function(propertyList, contents) {
-			return makeNode(name, propertyList, contents);
-		});
-	}
-
-
-	// BUILD VIRTUAL DOME NODES
-
-
-	function makeNode(name, propertyList, contents)
-	{
-		var props = listToProperties(propertyList);
-
-		var key, namespace;
-		// support keys
-		if (props.key !== undefined)
-		{
-			key = props.key;
-			props.key = undefined;
-		}
-
-		// support namespace
-		if (props.namespace !== undefined)
-		{
-			namespace = props.namespace;
-			props.namespace = undefined;
-		}
-
-		// ensure that setting text of an input does not move the cursor
-		var useSoftSet =
-			(name === 'input' || name === 'textarea')
-			&& props.value !== undefined
-			&& !isHook(props.value);
-
-		if (useSoftSet)
-		{
-			props.value = SoftSetHook(props.value);
-		}
-
-		return new VNode(name, props, List.toArray(contents), key, namespace);
-	}
-
-	function listToProperties(list)
-	{
-		var object = {};
-		while (list.ctor !== '[]')
-		{
-			var entry = list._0;
-			if (entry.key === ATTRIBUTE_KEY)
-			{
-				object.attributes = object.attributes || {};
-				object.attributes[entry.value.attrKey] = entry.value.attrValue;
-			}
-			else
-			{
-				object[entry.key] = entry.value;
-			}
-			list = list._1;
-		}
-		return object;
-	}
-
-
-
-	// PROPERTIES AND ATTRIBUTES
-
-
-	function property(key, value)
-	{
-		return {
-			key: key,
-			value: value
-		};
-	}
-
-	function attribute(key, value)
-	{
-		return {
-			key: ATTRIBUTE_KEY,
-			value: {
-				attrKey: key,
-				attrValue: value
-			}
-		};
-	}
-
-
-
-	// NAMESPACED ATTRIBUTES
-
-
-	function attributeNS(namespace, key, value)
-	{
-		return {
-			key: key,
-			value: new AttributeHook(namespace, key, value)
-		};
-	}
-
-	function AttributeHook(namespace, key, value)
-	{
-		if (!(this instanceof AttributeHook))
-		{
-			return new AttributeHook(namespace, key, value);
-		}
-
-		this.namespace = namespace;
-		this.key = key;
-		this.value = value;
-	}
-
-	AttributeHook.prototype.hook = function (node, prop, prev)
-	{
-		if (prev
-			&& prev.type === 'AttributeHook'
-			&& prev.value === this.value
-			&& prev.namespace === this.namespace)
-		{
-			return;
-		}
-
-		node.setAttributeNS(this.namespace, prop, this.value);
-	};
-
-	AttributeHook.prototype.unhook = function (node, prop, next)
-	{
-		if (next
-			&& next.type === 'AttributeHook'
-			&& next.namespace === this.namespace)
-		{
-			return;
-		}
-
-		node.removeAttributeNS(this.namespace, this.key);
-	};
-
-	AttributeHook.prototype.type = 'AttributeHook';
-
-
-
-	// EVENTS
-
-
-	function on(name, options, decoder, createMessage)
-	{
-		function eventHandler(event)
-		{
-			var value = A2(Json.runDecoderValue, decoder, event);
-			if (value.ctor === 'Ok')
-			{
-				if (options.stopPropagation)
-				{
-					event.stopPropagation();
-				}
-				if (options.preventDefault)
-				{
-					event.preventDefault();
-				}
-				Signal.sendMessage(createMessage(value._0));
-			}
-		}
-		return property('on' + name, eventHandler);
-	}
-
-	function SoftSetHook(value)
-	{
-		if (!(this instanceof SoftSetHook))
-		{
-			return new SoftSetHook(value);
-		}
-
-		this.value = value;
-	}
-
-	SoftSetHook.prototype.hook = function (node, propertyName)
-	{
-		if (node[propertyName] !== this.value)
-		{
-			node[propertyName] = this.value;
-		}
-	};
-
-
-
-	// INTEGRATION WITH ELEMENTS
-
-
-	function ElementWidget(element)
-	{
-		this.element = element;
-	}
-
-	ElementWidget.prototype.type = "Widget";
-
-	ElementWidget.prototype.init = function init()
-	{
-		return Element.render(this.element);
-	};
-
-	ElementWidget.prototype.update = function update(previous, node)
-	{
-		return Element.update(node, previous.element, this.element);
-	};
-
-	function fromElement(element)
-	{
-		return new ElementWidget(element);
-	}
-
-	function toElement(width, height, html)
-	{
-		return A3(Element.newElement, width, height, {
-			ctor: 'Custom',
-			type: 'evancz/elm-html',
-			render: render,
-			update: update,
-			model: html
-		});
-	}
-
-
-
-	// RENDER AND UPDATE
-
-
-	function render(model)
-	{
-		var element = Element.createNode('div');
-		element.appendChild(createElement(model));
-		return element;
-	}
-
-	function update(node, oldModel, newModel)
-	{
-		updateAndReplace(node.firstChild, oldModel, newModel);
-		return node;
-	}
-
-	function updateAndReplace(node, oldModel, newModel)
-	{
-		var patches = diff(oldModel, newModel);
-		var newNode = patch(node, patches);
-		return newNode;
-	}
-
-
-
-	// LAZINESS
-
-
-	function lazyRef(fn, a)
-	{
-		function thunk()
-		{
-			return fn(a);
-		}
-		return new Thunk(fn, [a], thunk);
-	}
-
-	function lazyRef2(fn, a, b)
-	{
-		function thunk()
-		{
-			return A2(fn, a, b);
-		}
-		return new Thunk(fn, [a,b], thunk);
-	}
-
-	function lazyRef3(fn, a, b, c)
-	{
-		function thunk()
-		{
-			return A3(fn, a, b, c);
-		}
-		return new Thunk(fn, [a,b,c], thunk);
-	}
-
-	function Thunk(fn, args, thunk)
-	{
-		/* public (used by VirtualDom.js) */
-		this.vnode = null;
-		this.key = undefined;
-
-		/* private */
-		this.fn = fn;
-		this.args = args;
-		this.thunk = thunk;
-	}
-
-	Thunk.prototype.type = "Thunk";
-	Thunk.prototype.render = renderThunk;
-
-	function shouldUpdate(current, previous)
-	{
-		if (current.fn !== previous.fn)
-		{
-			return true;
-		}
-
-		// if it's the same function, we know the number of args must match
-		var cargs = current.args;
-		var pargs = previous.args;
-
-		for (var i = cargs.length; i--; )
-		{
-			if (cargs[i] !== pargs[i])
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	function renderThunk(previous)
-	{
-		if (previous == null || shouldUpdate(this, previous))
-		{
-			return this.thunk();
-		}
-		else
-		{
-			return previous.vnode;
-		}
-	}
-
-
-	return elm.Native.VirtualDom.values = Elm.Native.VirtualDom.values = {
-		node: node,
-		text: text,
-		on: F4(on),
-
-		property: F2(property),
-		attribute: F2(attribute),
-		attributeNS: F3(attributeNS),
-
-		lazy: F2(lazyRef),
-		lazy2: F3(lazyRef2),
-		lazy3: F4(lazyRef3),
-
-		toElement: F3(toElement),
-		fromElement: fromElement,
-
-		render: createElement,
-		updateAndReplace: updateAndReplace
-	};
-};
-
-},{"virtual-dom/vdom/create-element":6,"virtual-dom/vdom/patch":9,"virtual-dom/vnode/is-vhook":13,"virtual-dom/vnode/vnode":18,"virtual-dom/vnode/vtext":20,"virtual-dom/vtree/diff":22}]},{},[23]);
-
-Elm.VirtualDom = Elm.VirtualDom || {};
-Elm.VirtualDom.make = function (_elm) {
+Elm.Trampoline = Elm.Trampoline || {};
+Elm.Trampoline.make = function (_elm) {
    "use strict";
-   _elm.VirtualDom = _elm.VirtualDom || {};
-   if (_elm.VirtualDom.values) return _elm.VirtualDom.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $Graphics$Element = Elm.Graphics.Element.make(_elm),
-   $Json$Decode = Elm.Json.Decode.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Native$VirtualDom = Elm.Native.VirtualDom.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   _elm.Trampoline = _elm.Trampoline || {};
+   if (_elm.Trampoline.values) return _elm.Trampoline.values;
+   var _U = Elm.Native.Utils.make(_elm);
    var _op = {};
-   var lazy3 = $Native$VirtualDom.lazy3;
-   var lazy2 = $Native$VirtualDom.lazy2;
-   var lazy = $Native$VirtualDom.lazy;
-   var defaultOptions = {stopPropagation: false,preventDefault: false};
-   var Options = F2(function (a,b) {    return {stopPropagation: a,preventDefault: b};});
-   var onWithOptions = $Native$VirtualDom.on;
-   var on = F3(function (eventName,decoder,toMessage) {    return A4($Native$VirtualDom.on,eventName,defaultOptions,decoder,toMessage);});
-   var attributeNS = $Native$VirtualDom.attributeNS;
-   var attribute = $Native$VirtualDom.attribute;
-   var property = $Native$VirtualDom.property;
-   var Property = {ctor: "Property"};
-   var fromElement = $Native$VirtualDom.fromElement;
-   var toElement = $Native$VirtualDom.toElement;
-   var text = $Native$VirtualDom.text;
-   var node = $Native$VirtualDom.node;
-   var Node = {ctor: "Node"};
-   return _elm.VirtualDom.values = {_op: _op
-                                   ,text: text
-                                   ,node: node
-                                   ,toElement: toElement
-                                   ,fromElement: fromElement
-                                   ,property: property
-                                   ,attribute: attribute
-                                   ,attributeNS: attributeNS
-                                   ,on: on
-                                   ,onWithOptions: onWithOptions
-                                   ,defaultOptions: defaultOptions
-                                   ,lazy: lazy
-                                   ,lazy2: lazy2
-                                   ,lazy3: lazy3
-                                   ,Options: Options};
+   var trampoline = function (tramp) {
+      trampoline: while (true) {
+         var _p0 = tramp;
+         if (_p0.ctor === "Done") {
+               return _p0._0;
+            } else {
+               var _v1 = _p0._0({ctor: "_Tuple0"});
+               tramp = _v1;
+               continue trampoline;
+            }
+      }
+   };
+   var Continue = function (a) {    return {ctor: "Continue",_0: a};};
+   var Done = function (a) {    return {ctor: "Done",_0: a};};
+   return _elm.Trampoline.values = {_op: _op,trampoline: trampoline,Done: Done,Continue: Continue};
 };
-Elm.Html = Elm.Html || {};
-Elm.Html.make = function (_elm) {
+Elm.Native.Console = {};
+Elm.Native.Console.NativeCom = {};
+Elm.Native.Console.NativeCom.make = function(localRuntime) {
+
+    localRuntime.Native = localRuntime.Native || {};
+    localRuntime.Native.Console = localRuntime.Console.Native || {};
+    localRuntime.Native.Console.NativeCom = localRuntime.Native.Console.NativeCom || {};
+    if (localRuntime.Native.Console.NativeCom.values) {
+    return localRuntime.Native.Console.NativeCom.values;
+    }
+
+    /* Elm imports */
+    var List = Elm.Native.List.make(localRuntime);
+    var Maybe = Elm.Maybe.make(localRuntime);
+    var NS = Elm.Native.Signal.make(localRuntime);
+    var Task = Elm.Native.Task.make(localRuntime);
+    var Utils = Elm.Native.Utils.make(localRuntime);
+
+
+    var fs = null;
+
+    /* Node.js imports */
+    if (typeof module !== 'undefined' && module.exports) {
+        fs = require('fs');
+
+        process.stdin.on('data', function(chunk) {
+            process.stdin.pause();
+            sendResponseString(chunk.toString());
+        })
+    }
+
+    var responsesSignal = NS.input('Console.NativeCom.responses', Maybe.Nothing);
+
+    var sendResponseString = function(str) {
+        var value = Maybe.Nothing;
+        if (str !== null && str.length > 0) {
+            value = Maybe.Just(str);
+        }
+        setTimeout(function() {
+            localRuntime.notify(responsesSignal.id, value);
+        }, 0);
+    }
+
+    var sendRequestBatch = function(list) {
+        var requests = List.toArray(list);
+        if (requests.length == 0) {
+            return Task.succeed(Utils.Tuple0);
+        }
+
+        return Task.asyncFunction(function(callback) {
+
+            requests.forEach(doRequest);
+
+            var lastReq = requests[requests.length - 1];
+            if (lastReq.ctor !== 'Get') {
+                // if we are not waiting for stdin,
+                // trigger the next IO requests immediately
+                sendResponseString(null);
+            }
+
+            return callback(Task.succeed(Utils.Tuple0));
+        });
+    }
+
+    var doRequest = function(request) {
+        switch(request.ctor) {
+            case 'Put':
+                process.stdout.write(request._0);
+                break;
+            case 'Get':
+                process.stdin.resume();
+                break;
+            case 'Exit':
+                process.exit(request._0);
+                break;
+            case 'WriteFile':
+                fs.writeFileSync(request._0.file, request._0.content);
+                break;
+            case 'Init':
+                // trigger the initial IO requests
+                sendResponseString(null);
+                break;
+        }
+    }
+
+    return localRuntime.Native.Console.NativeCom.values = {
+        sendRequestBatch: sendRequestBatch,
+        responses: responsesSignal
+    };
+};
+
+Elm.Console = Elm.Console || {};
+Elm.Console.NativeCom = Elm.Console.NativeCom || {};
+Elm.Console.NativeCom.make = function (_elm) {
    "use strict";
-   _elm.Html = _elm.Html || {};
-   if (_elm.Html.values) return _elm.Html.values;
+   _elm.Console = _elm.Console || {};
+   _elm.Console.NativeCom = _elm.Console.NativeCom || {};
+   if (_elm.Console.NativeCom.values) return _elm.Console.NativeCom.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
-   $Graphics$Element = Elm.Graphics.Element.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
+   $Native$Console$NativeCom = Elm.Native.Console.NativeCom.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $VirtualDom = Elm.VirtualDom.make(_elm);
+   $Task = Elm.Task.make(_elm);
    var _op = {};
-   var fromElement = $VirtualDom.fromElement;
-   var toElement = $VirtualDom.toElement;
-   var text = $VirtualDom.text;
-   var node = $VirtualDom.node;
-   var body = node("body");
-   var section = node("section");
-   var nav = node("nav");
-   var article = node("article");
-   var aside = node("aside");
-   var h1 = node("h1");
-   var h2 = node("h2");
-   var h3 = node("h3");
-   var h4 = node("h4");
-   var h5 = node("h5");
-   var h6 = node("h6");
-   var header = node("header");
-   var footer = node("footer");
-   var address = node("address");
-   var main$ = node("main");
-   var p = node("p");
-   var hr = node("hr");
-   var pre = node("pre");
-   var blockquote = node("blockquote");
-   var ol = node("ol");
-   var ul = node("ul");
-   var li = node("li");
-   var dl = node("dl");
-   var dt = node("dt");
-   var dd = node("dd");
-   var figure = node("figure");
-   var figcaption = node("figcaption");
-   var div = node("div");
-   var a = node("a");
-   var em = node("em");
-   var strong = node("strong");
-   var small = node("small");
-   var s = node("s");
-   var cite = node("cite");
-   var q = node("q");
-   var dfn = node("dfn");
-   var abbr = node("abbr");
-   var time = node("time");
-   var code = node("code");
-   var $var = node("var");
-   var samp = node("samp");
-   var kbd = node("kbd");
-   var sub = node("sub");
-   var sup = node("sup");
-   var i = node("i");
-   var b = node("b");
-   var u = node("u");
-   var mark = node("mark");
-   var ruby = node("ruby");
-   var rt = node("rt");
-   var rp = node("rp");
-   var bdi = node("bdi");
-   var bdo = node("bdo");
-   var span = node("span");
-   var br = node("br");
-   var wbr = node("wbr");
-   var ins = node("ins");
-   var del = node("del");
-   var img = node("img");
-   var iframe = node("iframe");
-   var embed = node("embed");
-   var object = node("object");
-   var param = node("param");
-   var video = node("video");
-   var audio = node("audio");
-   var source = node("source");
-   var track = node("track");
-   var canvas = node("canvas");
-   var svg = node("svg");
-   var math = node("math");
-   var table = node("table");
-   var caption = node("caption");
-   var colgroup = node("colgroup");
-   var col = node("col");
-   var tbody = node("tbody");
-   var thead = node("thead");
-   var tfoot = node("tfoot");
-   var tr = node("tr");
-   var td = node("td");
-   var th = node("th");
-   var form = node("form");
-   var fieldset = node("fieldset");
-   var legend = node("legend");
-   var label = node("label");
-   var input = node("input");
-   var button = node("button");
-   var select = node("select");
-   var datalist = node("datalist");
-   var optgroup = node("optgroup");
-   var option = node("option");
-   var textarea = node("textarea");
-   var keygen = node("keygen");
-   var output = node("output");
-   var progress = node("progress");
-   var meter = node("meter");
-   var details = node("details");
-   var summary = node("summary");
-   var menuitem = node("menuitem");
-   var menu = node("menu");
-   return _elm.Html.values = {_op: _op
-                             ,node: node
-                             ,text: text
-                             ,toElement: toElement
-                             ,fromElement: fromElement
-                             ,body: body
-                             ,section: section
-                             ,nav: nav
-                             ,article: article
-                             ,aside: aside
-                             ,h1: h1
-                             ,h2: h2
-                             ,h3: h3
-                             ,h4: h4
-                             ,h5: h5
-                             ,h6: h6
-                             ,header: header
-                             ,footer: footer
-                             ,address: address
-                             ,main$: main$
-                             ,p: p
-                             ,hr: hr
-                             ,pre: pre
-                             ,blockquote: blockquote
-                             ,ol: ol
-                             ,ul: ul
-                             ,li: li
-                             ,dl: dl
-                             ,dt: dt
-                             ,dd: dd
-                             ,figure: figure
-                             ,figcaption: figcaption
-                             ,div: div
-                             ,a: a
-                             ,em: em
-                             ,strong: strong
-                             ,small: small
-                             ,s: s
-                             ,cite: cite
-                             ,q: q
-                             ,dfn: dfn
-                             ,abbr: abbr
-                             ,time: time
-                             ,code: code
-                             ,$var: $var
-                             ,samp: samp
-                             ,kbd: kbd
-                             ,sub: sub
-                             ,sup: sup
-                             ,i: i
-                             ,b: b
-                             ,u: u
-                             ,mark: mark
-                             ,ruby: ruby
-                             ,rt: rt
-                             ,rp: rp
-                             ,bdi: bdi
-                             ,bdo: bdo
-                             ,span: span
-                             ,br: br
-                             ,wbr: wbr
-                             ,ins: ins
-                             ,del: del
-                             ,img: img
-                             ,iframe: iframe
-                             ,embed: embed
-                             ,object: object
-                             ,param: param
-                             ,video: video
-                             ,audio: audio
-                             ,source: source
-                             ,track: track
-                             ,canvas: canvas
-                             ,svg: svg
-                             ,math: math
-                             ,table: table
-                             ,caption: caption
-                             ,colgroup: colgroup
-                             ,col: col
-                             ,tbody: tbody
-                             ,thead: thead
-                             ,tfoot: tfoot
-                             ,tr: tr
-                             ,td: td
-                             ,th: th
-                             ,form: form
-                             ,fieldset: fieldset
-                             ,legend: legend
-                             ,label: label
-                             ,input: input
-                             ,button: button
-                             ,select: select
-                             ,datalist: datalist
-                             ,optgroup: optgroup
-                             ,option: option
-                             ,textarea: textarea
-                             ,keygen: keygen
-                             ,output: output
-                             ,progress: progress
-                             ,meter: meter
-                             ,details: details
-                             ,summary: summary
-                             ,menuitem: menuitem
-                             ,menu: menu};
+   var responses = $Native$Console$NativeCom.responses;
+   var sendRequestBatch = function (requests) {    return $Native$Console$NativeCom.sendRequestBatch(requests);};
+   var sendRequests = function (requests) {    return A2($Signal.map,sendRequestBatch,requests);};
+   var Init = {ctor: "Init"};
+   var WriteFile = function (a) {    return {ctor: "WriteFile",_0: a};};
+   var Get = {ctor: "Get"};
+   var Exit = function (a) {    return {ctor: "Exit",_0: a};};
+   var Put = function (a) {    return {ctor: "Put",_0: a};};
+   return _elm.Console.NativeCom.values = {_op: _op
+                                          ,Put: Put
+                                          ,Exit: Exit
+                                          ,Get: Get
+                                          ,WriteFile: WriteFile
+                                          ,Init: Init
+                                          ,sendRequests: sendRequests
+                                          ,sendRequestBatch: sendRequestBatch
+                                          ,responses: responses};
 };
-Elm.Html = Elm.Html || {};
-Elm.Html.Attributes = Elm.Html.Attributes || {};
-Elm.Html.Attributes.make = function (_elm) {
+Elm.Console = Elm.Console || {};
+Elm.Console.Runner = Elm.Console.Runner || {};
+Elm.Console.Runner.make = function (_elm) {
    "use strict";
-   _elm.Html = _elm.Html || {};
-   _elm.Html.Attributes = _elm.Html.Attributes || {};
-   if (_elm.Html.Attributes.values) return _elm.Html.Attributes.values;
+   _elm.Console = _elm.Console || {};
+   _elm.Console.Runner = _elm.Console.Runner || {};
+   if (_elm.Console.Runner.values) return _elm.Console.Runner.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
+   $Console$Core = Elm.Console.Core.make(_elm),
+   $Console$NativeCom = Elm.Console.NativeCom.make(_elm),
    $Debug = Elm.Debug.make(_elm),
-   $Html = Elm.Html.make(_elm),
-   $Json$Encode = Elm.Json.Encode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $String = Elm.String.make(_elm),
-   $VirtualDom = Elm.VirtualDom.make(_elm);
+   $Task = Elm.Task.make(_elm),
+   $Trampoline = Elm.Trampoline.make(_elm);
    var _op = {};
-   var attribute = $VirtualDom.attribute;
-   var contextmenu = function (value) {    return A2(attribute,"contextmenu",value);};
-   var property = $VirtualDom.property;
-   var stringProperty = F2(function (name,string) {    return A2(property,name,$Json$Encode.string(string));});
-   var $class = function (name) {    return A2(stringProperty,"className",name);};
-   var id = function (name) {    return A2(stringProperty,"id",name);};
-   var title = function (name) {    return A2(stringProperty,"title",name);};
-   var accesskey = function ($char) {    return A2(stringProperty,"accessKey",$String.fromChar($char));};
-   var dir = function (value) {    return A2(stringProperty,"dir",value);};
-   var draggable = function (value) {    return A2(stringProperty,"draggable",value);};
-   var dropzone = function (value) {    return A2(stringProperty,"dropzone",value);};
-   var itemprop = function (value) {    return A2(stringProperty,"itemprop",value);};
-   var lang = function (value) {    return A2(stringProperty,"lang",value);};
-   var tabindex = function (n) {    return A2(stringProperty,"tabIndex",$Basics.toString(n));};
-   var charset = function (value) {    return A2(stringProperty,"charset",value);};
-   var content = function (value) {    return A2(stringProperty,"content",value);};
-   var httpEquiv = function (value) {    return A2(stringProperty,"httpEquiv",value);};
-   var language = function (value) {    return A2(stringProperty,"language",value);};
-   var src = function (value) {    return A2(stringProperty,"src",value);};
-   var height = function (value) {    return A2(stringProperty,"height",$Basics.toString(value));};
-   var width = function (value) {    return A2(stringProperty,"width",$Basics.toString(value));};
-   var alt = function (value) {    return A2(stringProperty,"alt",value);};
-   var preload = function (value) {    return A2(stringProperty,"preload",value);};
-   var poster = function (value) {    return A2(stringProperty,"poster",value);};
-   var kind = function (value) {    return A2(stringProperty,"kind",value);};
-   var srclang = function (value) {    return A2(stringProperty,"srclang",value);};
-   var sandbox = function (value) {    return A2(stringProperty,"sandbox",value);};
-   var srcdoc = function (value) {    return A2(stringProperty,"srcdoc",value);};
-   var type$ = function (value) {    return A2(stringProperty,"type",value);};
-   var value = function (value) {    return A2(stringProperty,"value",value);};
-   var placeholder = function (value) {    return A2(stringProperty,"placeholder",value);};
-   var accept = function (value) {    return A2(stringProperty,"accept",value);};
-   var acceptCharset = function (value) {    return A2(stringProperty,"acceptCharset",value);};
-   var action = function (value) {    return A2(stringProperty,"action",value);};
-   var autocomplete = function (bool) {    return A2(stringProperty,"autocomplete",bool ? "on" : "off");};
-   var autosave = function (value) {    return A2(stringProperty,"autosave",value);};
-   var enctype = function (value) {    return A2(stringProperty,"enctype",value);};
-   var formaction = function (value) {    return A2(stringProperty,"formAction",value);};
-   var list = function (value) {    return A2(stringProperty,"list",value);};
-   var minlength = function (n) {    return A2(stringProperty,"minLength",$Basics.toString(n));};
-   var maxlength = function (n) {    return A2(stringProperty,"maxLength",$Basics.toString(n));};
-   var method = function (value) {    return A2(stringProperty,"method",value);};
-   var name = function (value) {    return A2(stringProperty,"name",value);};
-   var pattern = function (value) {    return A2(stringProperty,"pattern",value);};
-   var size = function (n) {    return A2(stringProperty,"size",$Basics.toString(n));};
-   var $for = function (value) {    return A2(stringProperty,"htmlFor",value);};
-   var form = function (value) {    return A2(stringProperty,"form",value);};
-   var max = function (value) {    return A2(stringProperty,"max",value);};
-   var min = function (value) {    return A2(stringProperty,"min",value);};
-   var step = function (n) {    return A2(stringProperty,"step",n);};
-   var cols = function (n) {    return A2(stringProperty,"cols",$Basics.toString(n));};
-   var rows = function (n) {    return A2(stringProperty,"rows",$Basics.toString(n));};
-   var wrap = function (value) {    return A2(stringProperty,"wrap",value);};
-   var usemap = function (value) {    return A2(stringProperty,"useMap",value);};
-   var shape = function (value) {    return A2(stringProperty,"shape",value);};
-   var coords = function (value) {    return A2(stringProperty,"coords",value);};
-   var challenge = function (value) {    return A2(stringProperty,"challenge",value);};
-   var keytype = function (value) {    return A2(stringProperty,"keytype",value);};
-   var align = function (value) {    return A2(stringProperty,"align",value);};
-   var cite = function (value) {    return A2(stringProperty,"cite",value);};
-   var href = function (value) {    return A2(stringProperty,"href",value);};
-   var target = function (value) {    return A2(stringProperty,"target",value);};
-   var downloadAs = function (value) {    return A2(stringProperty,"download",value);};
-   var hreflang = function (value) {    return A2(stringProperty,"hreflang",value);};
-   var media = function (value) {    return A2(stringProperty,"media",value);};
-   var ping = function (value) {    return A2(stringProperty,"ping",value);};
-   var rel = function (value) {    return A2(stringProperty,"rel",value);};
-   var datetime = function (value) {    return A2(stringProperty,"datetime",value);};
-   var pubdate = function (value) {    return A2(stringProperty,"pubdate",value);};
-   var start = function (n) {    return A2(stringProperty,"start",$Basics.toString(n));};
-   var colspan = function (n) {    return A2(stringProperty,"colSpan",$Basics.toString(n));};
-   var headers = function (value) {    return A2(stringProperty,"headers",value);};
-   var rowspan = function (n) {    return A2(stringProperty,"rowSpan",$Basics.toString(n));};
-   var scope = function (value) {    return A2(stringProperty,"scope",value);};
-   var manifest = function (value) {    return A2(stringProperty,"manifest",value);};
-   var boolProperty = F2(function (name,bool) {    return A2(property,name,$Json$Encode.bool(bool));});
-   var hidden = function (bool) {    return A2(boolProperty,"hidden",bool);};
-   var contenteditable = function (bool) {    return A2(boolProperty,"contentEditable",bool);};
-   var spellcheck = function (bool) {    return A2(boolProperty,"spellcheck",bool);};
-   var async = function (bool) {    return A2(boolProperty,"async",bool);};
-   var defer = function (bool) {    return A2(boolProperty,"defer",bool);};
-   var scoped = function (bool) {    return A2(boolProperty,"scoped",bool);};
-   var autoplay = function (bool) {    return A2(boolProperty,"autoplay",bool);};
-   var controls = function (bool) {    return A2(boolProperty,"controls",bool);};
-   var loop = function (bool) {    return A2(boolProperty,"loop",bool);};
-   var $default = function (bool) {    return A2(boolProperty,"default",bool);};
-   var seamless = function (bool) {    return A2(boolProperty,"seamless",bool);};
-   var checked = function (bool) {    return A2(boolProperty,"checked",bool);};
-   var selected = function (bool) {    return A2(boolProperty,"selected",bool);};
-   var autofocus = function (bool) {    return A2(boolProperty,"autofocus",bool);};
-   var disabled = function (bool) {    return A2(boolProperty,"disabled",bool);};
-   var multiple = function (bool) {    return A2(boolProperty,"multiple",bool);};
-   var novalidate = function (bool) {    return A2(boolProperty,"noValidate",bool);};
-   var readonly = function (bool) {    return A2(boolProperty,"readOnly",bool);};
-   var required = function (bool) {    return A2(boolProperty,"required",bool);};
-   var ismap = function (value) {    return A2(boolProperty,"isMap",value);};
-   var download = function (bool) {    return A2(boolProperty,"download",bool);};
-   var reversed = function (bool) {    return A2(boolProperty,"reversed",bool);};
-   var classList = function (list) {    return $class(A2($String.join," ",A2($List.map,$Basics.fst,A2($List.filter,$Basics.snd,list))));};
-   var style = function (props) {
-      return A2(property,
-      "style",
-      $Json$Encode.object(A2($List.map,function (_p0) {    var _p1 = _p0;return {ctor: "_Tuple2",_0: _p1._0,_1: $Json$Encode.string(_p1._1)};},props)));
+   var mapFst = F2(function (f,_p0) {    var _p1 = _p0;return {ctor: "_Tuple2",_0: f(_p1._0),_1: _p1._1};});
+   var put = F2(function (s,_p2) {    return {ctor: "_Tuple2",_0: s,_1: {ctor: "_Tuple0"}};});
+   var get = function (s) {    return {ctor: "_Tuple2",_0: s,_1: s};};
+   _op[">>="] = F3(function (f,k,s) {    var _p3 = f(s);var s$ = _p3._0;var y = _p3._1;return A2(k,y,s$);});
+   var pure = F2(function (x,s) {    return {ctor: "_Tuple2",_0: s,_1: x};});
+   var mapSt = F2(function (f,sf) {    return A2(_op[">>="],sf,function (_p4) {    return pure(f(_p4));});});
+   var writeF = $Console$NativeCom.WriteFile;
+   var getS = $Console$NativeCom.Get;
+   var exit = $Console$NativeCom.Exit;
+   var putS = $Console$NativeCom.Put;
+   var extractRequests = function (io) {
+      var _p5 = io;
+      if (_p5.ctor === "Pure") {
+            return pure({ctor: "_Tuple2",_0: _U.list([exit(0)]),_1: function (_p6) {    return $Console$Core.Pure(_p5._0);}});
+         } else {
+            var _p7 = _p5._0;
+            switch (_p7.ctor)
+            {case "PutS": return A2(mapSt,
+                 mapFst(function (rs) {    return A2($List._op["::"],putS(_p7._0),rs);}),
+                 pure({ctor: "_Tuple2",_0: _U.list([]),_1: _p7._1}));
+               case "WriteF": return A2(mapSt,
+                 mapFst(function (rs) {    return A2($List._op["::"],writeF(_p7._0),rs);}),
+                 pure({ctor: "_Tuple2",_0: _U.list([]),_1: _p7._1}));
+               case "Exit": return pure({ctor: "_Tuple2",_0: _U.list([exit(_p7._0)]),_1: function (_p8) {    return io;}});
+               default: return A2(_op[">>="],
+                 get,
+                 function (st) {
+                    var _p9 = $String.uncons(st.buffer);
+                    if (_p9.ctor === "Nothing") {
+                          return pure({ctor: "_Tuple2",_0: _U.list([getS]),_1: function (_p10) {    return io;}});
+                       } else {
+                          return A2(_op[">>="],put({buffer: _p9._0._1}),function (_p11) {    return extractRequests(_p7._0(_p9._0._0));});
+                       }
+                 });}
+         }
    };
-   var key = function (k) {    return A2(stringProperty,"key",k);};
-   return _elm.Html.Attributes.values = {_op: _op
-                                        ,key: key
-                                        ,style: style
-                                        ,$class: $class
-                                        ,classList: classList
-                                        ,id: id
-                                        ,title: title
-                                        ,hidden: hidden
-                                        ,type$: type$
-                                        ,value: value
-                                        ,checked: checked
-                                        ,placeholder: placeholder
-                                        ,selected: selected
-                                        ,accept: accept
-                                        ,acceptCharset: acceptCharset
-                                        ,action: action
-                                        ,autocomplete: autocomplete
-                                        ,autofocus: autofocus
-                                        ,autosave: autosave
-                                        ,disabled: disabled
-                                        ,enctype: enctype
-                                        ,formaction: formaction
-                                        ,list: list
-                                        ,maxlength: maxlength
-                                        ,minlength: minlength
-                                        ,method: method
-                                        ,multiple: multiple
-                                        ,name: name
-                                        ,novalidate: novalidate
-                                        ,pattern: pattern
-                                        ,readonly: readonly
-                                        ,required: required
-                                        ,size: size
-                                        ,$for: $for
-                                        ,form: form
-                                        ,max: max
-                                        ,min: min
-                                        ,step: step
-                                        ,cols: cols
-                                        ,rows: rows
-                                        ,wrap: wrap
-                                        ,href: href
-                                        ,target: target
-                                        ,download: download
-                                        ,downloadAs: downloadAs
-                                        ,hreflang: hreflang
-                                        ,media: media
-                                        ,ping: ping
-                                        ,rel: rel
-                                        ,ismap: ismap
-                                        ,usemap: usemap
-                                        ,shape: shape
-                                        ,coords: coords
-                                        ,src: src
-                                        ,height: height
-                                        ,width: width
-                                        ,alt: alt
-                                        ,autoplay: autoplay
-                                        ,controls: controls
-                                        ,loop: loop
-                                        ,preload: preload
-                                        ,poster: poster
-                                        ,$default: $default
-                                        ,kind: kind
-                                        ,srclang: srclang
-                                        ,sandbox: sandbox
-                                        ,seamless: seamless
-                                        ,srcdoc: srcdoc
-                                        ,reversed: reversed
-                                        ,start: start
-                                        ,align: align
-                                        ,colspan: colspan
-                                        ,rowspan: rowspan
-                                        ,headers: headers
-                                        ,scope: scope
-                                        ,async: async
-                                        ,charset: charset
-                                        ,content: content
-                                        ,defer: defer
-                                        ,httpEquiv: httpEquiv
-                                        ,language: language
-                                        ,scoped: scoped
-                                        ,accesskey: accesskey
-                                        ,contenteditable: contenteditable
-                                        ,contextmenu: contextmenu
-                                        ,dir: dir
-                                        ,draggable: draggable
-                                        ,dropzone: dropzone
-                                        ,itemprop: itemprop
-                                        ,lang: lang
-                                        ,spellcheck: spellcheck
-                                        ,tabindex: tabindex
-                                        ,challenge: challenge
-                                        ,keytype: keytype
-                                        ,cite: cite
-                                        ,datetime: datetime
-                                        ,pubdate: pubdate
-                                        ,manifest: manifest
-                                        ,property: property
-                                        ,attribute: attribute};
+   var step = F3(function (resp,io,st) {
+      var newST = function () {
+         var _p12 = resp;
+         if (_p12.ctor === "Nothing") {
+               return st;
+            } else {
+               return {buffer: A2($String.append,st.buffer,_p12._0)};
+            }
+      }();
+      var _p13 = A2(extractRequests,io({ctor: "_Tuple0"}),newST);
+      var newST$ = _p13._0;
+      var rs = _p13._1._0;
+      var k = _p13._1._1;
+      return {ctor: "_Tuple3",_0: k,_1: newST$,_2: rs};
+   });
+   var flattenReqs = function (rs) {
+      var loop = F3(function (rs,acc,n) {
+         loop: while (true) if (_U.cmp(n,100) > -1) return $Trampoline.Continue(function (_p14) {    return A3(loop,rs,acc,0);}); else {
+               var _p15 = rs;
+               if (_p15.ctor === "[]") {
+                     return $Trampoline.Done($List.reverse(acc));
+                  } else {
+                     if (_p15._1.ctor === "[]") {
+                           var _v6 = _U.list([]),_v7 = A2($List._op["::"],_p15._0,acc),_v8 = n + 1;
+                           rs = _v6;
+                           acc = _v7;
+                           n = _v8;
+                           continue loop;
+                        } else {
+                           var _p19 = _p15._1._1;
+                           var _p18 = _p15._1._0;
+                           var _p17 = _p15._0;
+                           var _p16 = {ctor: "_Tuple2",_0: _p17,_1: _p18};
+                           _v9_2: do {
+                              if (_p16.ctor === "_Tuple2") {
+                                    switch (_p16._0.ctor)
+                                    {case "Exit": var _v10 = _U.list([]),_v11 = A2($List._op["::"],_p17,acc),_v12 = _p16._0._0 + 1;
+                                         rs = _v10;
+                                         acc = _v11;
+                                         n = _v12;
+                                         continue loop;
+                                       case "Put": if (_p16._1.ctor === "Put") {
+                                               var _v13 = A2($List._op["::"],putS(A2($Basics._op["++"],_p16._0._0,_p16._1._0)),_p19),_v14 = acc,_v15 = n + 1;
+                                               rs = _v13;
+                                               acc = _v14;
+                                               n = _v15;
+                                               continue loop;
+                                            } else {
+                                               break _v9_2;
+                                            }
+                                       default: break _v9_2;}
+                                 } else {
+                                    break _v9_2;
+                                 }
+                           } while (false);
+                           var _v16 = A2($List._op["::"],_p18,_p19),_v17 = A2($List._op["::"],_p17,acc),_v18 = n + 1;
+                           rs = _v16;
+                           acc = _v17;
+                           n = _v18;
+                           continue loop;
+                        }
+                  }
+            }
+      });
+      return $Trampoline.trampoline(A3(loop,rs,_U.list([]),0));
+   };
+   var start = {buffer: ""};
+   var run = function (io) {
+      var third = function (_p20) {    var _p21 = _p20;return _p21._2;};
+      var f = F2(function (resp,_p22) {    var _p23 = _p22;return A3(step,resp,_p23._0,_p23._1);});
+      var init = {ctor: "_Tuple3",_0: function (_p24) {    return io;},_1: start,_2: _U.list([$Console$NativeCom.Init])};
+      return $Console$NativeCom.sendRequests(A2($Signal.map,third,A3($Signal.foldp,f,init,$Console$NativeCom.responses)));
+   };
+   var IOState = function (a) {    return {buffer: a};};
+   return _elm.Console.Runner.values = {_op: _op
+                                       ,IOState: IOState
+                                       ,start: start
+                                       ,run: run
+                                       ,putS: putS
+                                       ,exit: exit
+                                       ,getS: getS
+                                       ,writeF: writeF
+                                       ,extractRequests: extractRequests
+                                       ,flattenReqs: flattenReqs
+                                       ,step: step
+                                       ,pure: pure
+                                       ,mapSt: mapSt
+                                       ,get: get
+                                       ,put: put
+                                       ,mapFst: mapFst};
 };
-Elm.Html = Elm.Html || {};
-Elm.Html.Events = Elm.Html.Events || {};
-Elm.Html.Events.make = function (_elm) {
+Elm.Console = Elm.Console || {};
+Elm.Console.make = function (_elm) {
    "use strict";
-   _elm.Html = _elm.Html || {};
-   _elm.Html.Events = _elm.Html.Events || {};
-   if (_elm.Html.Events.values) return _elm.Html.Events.values;
+   _elm.Console = _elm.Console || {};
+   if (_elm.Console.values) return _elm.Console.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
+   $Console$Core = Elm.Console.Core.make(_elm),
+   $Console$Runner = Elm.Console.Runner.make(_elm),
    $Debug = Elm.Debug.make(_elm),
-   $Html = Elm.Html.make(_elm),
-   $Json$Decode = Elm.Json.Decode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $VirtualDom = Elm.VirtualDom.make(_elm);
+   $Task = Elm.Task.make(_elm);
    var _op = {};
-   var keyCode = A2($Json$Decode._op[":="],"keyCode",$Json$Decode.$int);
-   var targetChecked = A2($Json$Decode.at,_U.list(["target","checked"]),$Json$Decode.bool);
-   var targetValue = A2($Json$Decode.at,_U.list(["target","value"]),$Json$Decode.string);
-   var defaultOptions = $VirtualDom.defaultOptions;
-   var Options = F2(function (a,b) {    return {stopPropagation: a,preventDefault: b};});
-   var onWithOptions = $VirtualDom.onWithOptions;
-   var on = $VirtualDom.on;
-   var messageOn = F3(function (name,addr,msg) {    return A3(on,name,$Json$Decode.value,function (_p0) {    return A2($Signal.message,addr,msg);});});
-   var onClick = messageOn("click");
-   var onDoubleClick = messageOn("dblclick");
-   var onMouseMove = messageOn("mousemove");
-   var onMouseDown = messageOn("mousedown");
-   var onMouseUp = messageOn("mouseup");
-   var onMouseEnter = messageOn("mouseenter");
-   var onMouseLeave = messageOn("mouseleave");
-   var onMouseOver = messageOn("mouseover");
-   var onMouseOut = messageOn("mouseout");
-   var onBlur = messageOn("blur");
-   var onFocus = messageOn("focus");
-   var onSubmit = messageOn("submit");
-   var onKey = F3(function (name,addr,handler) {    return A3(on,name,keyCode,function (code) {    return A2($Signal.message,addr,handler(code));});});
-   var onKeyUp = onKey("keyup");
-   var onKeyDown = onKey("keydown");
-   var onKeyPress = onKey("keypress");
-   return _elm.Html.Events.values = {_op: _op
-                                    ,onBlur: onBlur
-                                    ,onFocus: onFocus
-                                    ,onSubmit: onSubmit
-                                    ,onKeyUp: onKeyUp
-                                    ,onKeyDown: onKeyDown
-                                    ,onKeyPress: onKeyPress
-                                    ,onClick: onClick
-                                    ,onDoubleClick: onDoubleClick
-                                    ,onMouseMove: onMouseMove
-                                    ,onMouseDown: onMouseDown
-                                    ,onMouseUp: onMouseUp
-                                    ,onMouseEnter: onMouseEnter
-                                    ,onMouseLeave: onMouseLeave
-                                    ,onMouseOver: onMouseOver
-                                    ,onMouseOut: onMouseOut
-                                    ,on: on
-                                    ,onWithOptions: onWithOptions
-                                    ,defaultOptions: defaultOptions
-                                    ,targetValue: targetValue
-                                    ,targetChecked: targetChecked
-                                    ,keyCode: keyCode
-                                    ,Options: Options};
+   var run = $Console$Runner.run;
+   var forever = $Console$Core.forever;
+   _op[">>>"] = $Console$Core.seq;
+   var sequenceMany = $Console$Core.sequenceMany;
+   var seq = $Console$Core.seq;
+   _op[">>="] = $Console$Core.andThen;
+   var andThen = $Console$Core.andThen;
+   _op["<*>"] = $Console$Core.apply;
+   var apply = $Console$Core.apply;
+   var pure = $Console$Core.pure;
+   var forEach = $Console$Core.forEach;
+   var mapIO = $Console$Core.mapIO;
+   var map2 = $Console$Core.map2;
+   var map = $Console$Core.map;
+   var getLine = $Console$Core.getLine;
+   var writeFile = $Console$Core.writeFile;
+   var readUntil = $Console$Core.readUntil;
+   var putStrLn = $Console$Core.putStrLn;
+   var putStr = $Console$Core.putStr;
+   var exit = $Console$Core.exit;
+   var getChar = $Console$Core.getChar;
+   var putChar = $Console$Core.putChar;
+   return _elm.Console.values = {_op: _op
+                                ,putChar: putChar
+                                ,putStr: putStr
+                                ,putStrLn: putStrLn
+                                ,getChar: getChar
+                                ,getLine: getLine
+                                ,readUntil: readUntil
+                                ,writeFile: writeFile
+                                ,exit: exit
+                                ,map: map
+                                ,map2: map2
+                                ,mapIO: mapIO
+                                ,forEach: forEach
+                                ,pure: pure
+                                ,apply: apply
+                                ,andThen: andThen
+                                ,seq: seq
+                                ,sequenceMany: sequenceMany
+                                ,forever: forever
+                                ,run: run};
+};
+Elm.ElmTest = Elm.ElmTest || {};
+Elm.ElmTest.Assertion = Elm.ElmTest.Assertion || {};
+Elm.ElmTest.Assertion.make = function (_elm) {
+   "use strict";
+   _elm.ElmTest = _elm.ElmTest || {};
+   _elm.ElmTest.Assertion = _elm.ElmTest.Assertion || {};
+   if (_elm.ElmTest.Assertion.values) return _elm.ElmTest.Assertion.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var AlwaysFail = function (a) {    return {ctor: "AlwaysFail",_0: a};};
+   var AlwaysPass = {ctor: "AlwaysPass"};
+   var AssertNotEqual = F3(function (a,b,c) {    return {ctor: "AssertNotEqual",_0: a,_1: b,_2: c};});
+   var assertNotEqual = F2(function (a,b) {    return A3(AssertNotEqual,function (_p0) {    return !_U.eq(a,b);},$Basics.toString(a),$Basics.toString(b));});
+   var AssertEqual = F3(function (a,b,c) {    return {ctor: "AssertEqual",_0: a,_1: b,_2: c};});
+   var assertEqual = F2(function (a,b) {    return A3(AssertEqual,function (_p1) {    return _U.eq(a,b);},$Basics.toString(a),$Basics.toString(b));});
+   var assertionList = F2(function (xs,ys) {    return A3($List.map2,assertEqual,xs,ys);});
+   var AssertFalse = function (a) {    return {ctor: "AssertFalse",_0: a};};
+   var AssertTrue = function (a) {    return {ctor: "AssertTrue",_0: a};};
+   var assertT = AssertTrue;
+   var assert = function (b) {    return AssertTrue(function (_p2) {    return b;});};
+   return _elm.ElmTest.Assertion.values = {_op: _op
+                                          ,assertionList: assertionList
+                                          ,assertT: assertT
+                                          ,assert: assert
+                                          ,assertEqual: assertEqual
+                                          ,assertNotEqual: assertNotEqual
+                                          ,AssertTrue: AssertTrue
+                                          ,AssertFalse: AssertFalse
+                                          ,AssertEqual: AssertEqual
+                                          ,AssertNotEqual: AssertNotEqual
+                                          ,AlwaysPass: AlwaysPass
+                                          ,AlwaysFail: AlwaysFail};
+};
+Elm.ElmTest = Elm.ElmTest || {};
+Elm.ElmTest.Test = Elm.ElmTest.Test || {};
+Elm.ElmTest.Test.make = function (_elm) {
+   "use strict";
+   _elm.ElmTest = _elm.ElmTest || {};
+   _elm.ElmTest.Test = _elm.ElmTest.Test || {};
+   if (_elm.ElmTest.Test.values) return _elm.ElmTest.Test.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest$Assertion = Elm.ElmTest.Assertion.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var numberOfSuites = function (test) {
+      var _p0 = test;
+      if (_p0.ctor === "TestCase") {
+            return 0;
+         } else {
+            return 1 + function (_p1) {
+               return $List.sum(A2($List.map,numberOfSuites,_p1));
+            }(_p0._1);
+         }
+   };
+   var numberOfTests = function (test) {
+      var _p2 = test;
+      if (_p2.ctor === "TestCase") {
+            return 1;
+         } else {
+            return function (_p3) {
+               return $List.sum(A2($List.map,numberOfTests,_p3));
+            }(_p2._1);
+         }
+   };
+   var nameOf = function (test) {    var _p4 = test;if (_p4.ctor === "TestCase") {    return _p4._0;} else {    return _p4._0;}};
+   var Suite = F2(function (a,b) {    return {ctor: "Suite",_0: a,_1: b};});
+   var suite = Suite;
+   var TestCase = F2(function (a,b) {    return {ctor: "TestCase",_0: a,_1: b};});
+   var test = F2(function (name,a) {    return A2(TestCase,name,a);});
+   var defaultTest = function (a) {
+      var name = function () {
+         var _p5 = a;
+         switch (_p5.ctor)
+         {case "AssertTrue": return "True";
+            case "AssertFalse": return "False";
+            case "AssertEqual": return A2($Basics._op["++"],_p5._1,A2($Basics._op["++"]," == ",_p5._2));
+            case "AssertNotEqual": return A2($Basics._op["++"],_p5._1,A2($Basics._op["++"]," /= ",_p5._2));
+            case "AlwaysPass": return "Always passes";
+            default: return "Always fails";}
+      }();
+      return A2(test,name,a);
+   };
+   var equals = F2(function (a,b) {    return defaultTest(A2($ElmTest$Assertion.assertEqual,a,b));});
+   return _elm.ElmTest.Test.values = {_op: _op
+                                     ,test: test
+                                     ,equals: equals
+                                     ,defaultTest: defaultTest
+                                     ,suite: suite
+                                     ,numberOfTests: numberOfTests
+                                     ,numberOfSuites: numberOfSuites
+                                     ,TestCase: TestCase
+                                     ,Suite: Suite};
+};
+Elm.ElmTest = Elm.ElmTest || {};
+Elm.ElmTest.Run = Elm.ElmTest.Run || {};
+Elm.ElmTest.Run.make = function (_elm) {
+   "use strict";
+   _elm.ElmTest = _elm.ElmTest || {};
+   _elm.ElmTest.Run = _elm.ElmTest.Run || {};
+   if (_elm.ElmTest.Run.values) return _elm.ElmTest.Run.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest$Assertion = Elm.ElmTest.Assertion.make(_elm),
+   $ElmTest$Test = Elm.ElmTest.Test.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var failedSuites = function (result) {
+      var _p0 = result;
+      if (_p0.ctor === "Report") {
+            var _p2 = _p0._1;
+            var failed = _U.cmp($List.length(_p2.failures),0) > 0 ? 1 : 0;
+            return failed + function (_p1) {
+               return $List.sum(A2($List.map,failedSuites,_p1));
+            }(_p2.results);
+         } else {
+            return 0;
+         }
+   };
+   var passedSuites = function (result) {
+      var _p3 = result;
+      if (_p3.ctor === "Report") {
+            var _p5 = _p3._1;
+            var passed = _U.eq($List.length(_p5.failures),0) ? 1 : 0;
+            return passed + function (_p4) {
+               return $List.sum(A2($List.map,passedSuites,_p4));
+            }(_p5.results);
+         } else {
+            return 0;
+         }
+   };
+   var failedTests = function (result) {
+      var _p6 = result;
+      switch (_p6.ctor)
+      {case "Pass": return 0;
+         case "Fail": return 1;
+         default: return function (_p7) {
+              return $List.sum(A2($List.map,failedTests,_p7));
+           }(_p6._1.results);}
+   };
+   var passedTests = function (result) {
+      var _p8 = result;
+      switch (_p8.ctor)
+      {case "Pass": return 1;
+         case "Fail": return 0;
+         default: return function (_p9) {
+              return $List.sum(A2($List.map,passedTests,_p9));
+           }(_p8._1.results);}
+   };
+   var pass = function (m) {
+      var _p10 = m;
+      switch (_p10.ctor)
+      {case "Pass": return true;
+         case "Fail": return false;
+         default: return _U.cmp($List.length(function (_) {    return _.failures;}(_p10._1)),0) > 0 ? false : true;}
+   };
+   var fail = function (_p11) {    return $Basics.not(pass(_p11));};
+   var Report = F2(function (a,b) {    return {ctor: "Report",_0: a,_1: b};});
+   var Fail = F2(function (a,b) {    return {ctor: "Fail",_0: a,_1: b};});
+   var Pass = function (a) {    return {ctor: "Pass",_0: a};};
+   var run = function (test) {
+      var _p12 = test;
+      if (_p12.ctor === "TestCase") {
+            var _p14 = _p12._0;
+            var runAssertion = F2(function (t,m) {    return t({ctor: "_Tuple0"}) ? Pass(_p14) : A2(Fail,_p14,m);});
+            var _p13 = _p12._1;
+            switch (_p13.ctor)
+            {case "AssertEqual": return A2(runAssertion,
+                 _p13._0,
+                 A2($Basics._op["++"],"Expected: ",A2($Basics._op["++"],_p13._1,A2($Basics._op["++"],"; got: ",_p13._2))));
+               case "AssertNotEqual": return A2(runAssertion,_p13._0,A2($Basics._op["++"],_p13._1,A2($Basics._op["++"]," equals ",_p13._2)));
+               case "AssertTrue": return A2(runAssertion,_p13._0,"not True");
+               case "AssertFalse": return A2(runAssertion,_p13._0,"not False");
+               case "AlwaysPass": return A2(runAssertion,$Basics.always(true),"");
+               default: return A2(runAssertion,$Basics.always(false),_p13._0);}
+         } else {
+            var results = A2($List.map,run,_p12._1);
+            var _p15 = A2($List.partition,pass,results);
+            var passes = _p15._0;
+            var fails = _p15._1;
+            return A2(Report,_p12._0,{results: results,passes: passes,failures: fails});
+         }
+   };
+   var Summary = F3(function (a,b,c) {    return {results: a,passes: b,failures: c};});
+   return _elm.ElmTest.Run.values = {_op: _op
+                                    ,run: run
+                                    ,pass: pass
+                                    ,fail: fail
+                                    ,failedTests: failedTests
+                                    ,passedTests: passedTests
+                                    ,failedSuites: failedSuites
+                                    ,passedSuites: passedSuites
+                                    ,Pass: Pass
+                                    ,Fail: Fail
+                                    ,Report: Report};
+};
+Elm.ElmTest = Elm.ElmTest || {};
+Elm.ElmTest.Runner = Elm.ElmTest.Runner || {};
+Elm.ElmTest.Runner.String = Elm.ElmTest.Runner.String || {};
+Elm.ElmTest.Runner.String.make = function (_elm) {
+   "use strict";
+   _elm.ElmTest = _elm.ElmTest || {};
+   _elm.ElmTest.Runner = _elm.ElmTest.Runner || {};
+   _elm.ElmTest.Runner.String = _elm.ElmTest.Runner.String || {};
+   if (_elm.ElmTest.Runner.String.values) return _elm.ElmTest.Runner.String.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest$Run = Elm.ElmTest.Run.make(_elm),
+   $ElmTest$Test = Elm.ElmTest.Test.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var replicate = F2(function (n,c) {
+      var go = function (n) {    return _U.cmp(n,0) < 1 ? _U.list([]) : A2($List._op["::"],c,go(n - 1));};
+      return function (_p0) {
+         return $String.fromList(go(_p0));
+      }(n);
+   });
+   var vcat = function (_p1) {    return $String.concat(A2($List.intersperse,"\n",_p1));};
+   var indent = function (n) {
+      var indents = A2(replicate,n,_U.chr(" "));
+      return function (_p2) {
+         return vcat(A2($List.map,$String.append(indents),$String.lines(_p2)));
+      };
+   };
+   var pretty = F2(function (n,result) {
+      var passed = $ElmTest$Run.pass(result);
+      var _p3 = result;
+      switch (_p3.ctor)
+      {case "Pass": return _U.list([{ctor: "_Tuple2",_0: A2(indent,n,A2($Basics._op["++"],_p3._0,": passed.")),_1: result}]);
+         case "Fail": return _U.list([{ctor: "_Tuple2",_0: A2(indent,n,A2($Basics._op["++"],_p3._0,A2($Basics._op["++"],": FAILED. ",_p3._1))),_1: result}]);
+         default: var allPassed = _U.eq($ElmTest$Run.failedTests(result),0);
+           var subResults = allPassed ? _U.list([]) : A2($List.concatMap,pretty(n + 2),_p3._1.results);
+           var msg = A2($Basics._op["++"],"Test Suite: ",A2($Basics._op["++"],_p3._0,A2($Basics._op["++"],": ",passed ? "all tests passed" : "FAILED")));
+           return A2($List._op["::"],{ctor: "_Tuple2",_0: A2(indent,n,msg),_1: result},subResults);}
+   });
+   var run = function (t) {
+      var tests = function () {
+         var _p4 = t;
+         if (_p4.ctor === "TestCase") {
+               return _U.list([A2($ElmTest$Test.TestCase,_p4._0,_p4._1)]);
+            } else {
+               return _p4._1;
+            }
+      }();
+      var result = $ElmTest$Run.run(t);
+      var passedTests$ = $ElmTest$Run.passedTests(result);
+      var passedSuites$ = $ElmTest$Run.passedSuites(result);
+      var failedTests$ = $ElmTest$Run.failedTests(result);
+      var allPassed = _U.eq(failedTests$,0) ? $ElmTest$Run.Pass("") : A2($ElmTest$Run.Fail,"","");
+      var failedSuites$ = $ElmTest$Run.failedSuites(result);
+      var summary = function (_p5) {
+         return vcat(A2($List.map,indent(2),_p5));
+      }(_U.list([A2($Basics._op["++"],
+                $Basics.toString($ElmTest$Test.numberOfSuites(t)),
+                A2($Basics._op["++"]," suites run, containing ",A2($Basics._op["++"],$Basics.toString($ElmTest$Test.numberOfTests(t))," tests")))
+                ,_U.eq(failedTests$,0) ? "All tests passed" : A2($Basics._op["++"],
+                $Basics.toString(passedSuites$),
+                A2($Basics._op["++"]," suites and ",A2($Basics._op["++"],$Basics.toString(passedTests$)," tests passed")))
+                ,_U.eq(failedTests$,0) ? "" : A2($Basics._op["++"],
+                $Basics.toString(failedSuites$),
+                A2($Basics._op["++"]," suites and ",A2($Basics._op["++"],$Basics.toString(failedTests$)," tests failed")))]));
+      var results$ = function () {
+         var _p6 = allPassed;
+         if (_p6.ctor === "Pass") {
+               return _U.list([{ctor: "_Tuple2",_0: "",_1: allPassed}]);
+            } else {
+               return A2(pretty,0,result);
+            }
+      }();
+      return A2($List._op["::"],{ctor: "_Tuple2",_0: summary,_1: allPassed},results$);
+   };
+   var runDisplay = function (t) {
+      var _p7 = run(t);
+      if (_p7.ctor === "::" && _p7._0.ctor === "_Tuple2") {
+            return vcat(A2($List._op["::"],A2($Basics._op["++"],_p7._0._0,"\n"),A2($List.map,$Basics.fst,_p7._1)));
+         } else {
+            return "";
+         }
+   };
+   return _elm.ElmTest.Runner.String.values = {_op: _op,runDisplay: runDisplay,run: run};
+};
+Elm.ElmTest = Elm.ElmTest || {};
+Elm.ElmTest.Runner = Elm.ElmTest.Runner || {};
+Elm.ElmTest.Runner.Element = Elm.ElmTest.Runner.Element || {};
+Elm.ElmTest.Runner.Element.make = function (_elm) {
+   "use strict";
+   _elm.ElmTest = _elm.ElmTest || {};
+   _elm.ElmTest.Runner = _elm.ElmTest.Runner || {};
+   _elm.ElmTest.Runner.Element = _elm.ElmTest.Runner.Element || {};
+   if (_elm.ElmTest.Runner.Element.values) return _elm.ElmTest.Runner.Element.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Color = Elm.Color.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest$Run = Elm.ElmTest.Run.make(_elm),
+   $ElmTest$Runner$String = Elm.ElmTest.Runner.String.make(_elm),
+   $ElmTest$Test = Elm.ElmTest.Test.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Text = Elm.Text.make(_elm);
+   var _op = {};
+   var maxOrZero = function (l) {    return A3($List.foldl,$Basics.max,0,l);};
+   var indent = function (s) {    var trimmed = $String.trimLeft(s);return $String.length(s) - $String.length(trimmed);};
+   var red = A3($Color.rgb,255,126,132);
+   var plainText = function (s) {    return $Graphics$Element.leftAligned($Text.fromString(s));};
+   var pretty = function (_p0) {
+      var _p1 = _p0;
+      var _p5 = _p1._0;
+      var _p4 = _p1._1;
+      var w$ = 5;
+      var w = indent(_p5) * 10;
+      var _p2 = _p4;
+      switch (_p2.ctor)
+      {case "Pass": return A2($Graphics$Element.flow,
+           $Graphics$Element.right,
+           _U.list([A2($Graphics$Element.spacer,w,1),plainText(_p5),A2($Graphics$Element.spacer,w$,1)]));
+         case "Fail": return A2($Graphics$Element.color,
+           red,
+           A2($Graphics$Element.flow,$Graphics$Element.right,_U.list([A2($Graphics$Element.spacer,w,1),plainText(_p5),A2($Graphics$Element.spacer,w$,1)])));
+         default: var f = _U.cmp($ElmTest$Run.failedTests(_p4),0) > 0 ? $Graphics$Element.color(red) : $Basics.identity;
+           return f(A2($Graphics$Element.flow,
+           $Graphics$Element.right,
+           _U.list([A2($Graphics$Element.spacer,w,1)
+                   ,function (_p3) {
+                      return $Graphics$Element.leftAligned($Text.bold($Text.fromString(_p3)));
+                   }(_p5)
+                   ,A2($Graphics$Element.spacer,w$,1)])));}
+   };
+   var runDisplay = function (tests) {
+      var _p6 = $ElmTest$Runner$String.run(tests);
+      if (_p6.ctor === "::" && _p6._0.ctor === "_Tuple2") {
+            var _p8 = _p6._1;
+            var results$ = A2($List.map,pretty,_p8);
+            var maxWidth = function (_p7) {    return maxOrZero(A2($List.map,$Graphics$Element.widthOf,_p7));}(results$);
+            var separator = A2($Graphics$Element.color,$Color.white,A2($Graphics$Element.spacer,maxWidth,1));
+            var elements = _U.eq(_p8,_U.list([{ctor: "_Tuple2",_0: "",_1: _p6._0._1}])) ? _U.list([]) : A2($List.intersperse,
+            separator,
+            A2($List.map,function (elem) {    return A2($Graphics$Element.width,maxWidth,elem);},results$));
+            return A2($Graphics$Element.flow,
+            $Graphics$Element.down,
+            A2($List._op["::"],plainText(_p6._0._0),A2($List._op["::"],A2($Graphics$Element.spacer,1,10),elements)));
+         } else {
+            return A2($Graphics$Element.flow,$Graphics$Element.down,_U.list([]));
+         }
+   };
+   return _elm.ElmTest.Runner.Element.values = {_op: _op,runDisplay: runDisplay};
+};
+Elm.ElmTest = Elm.ElmTest || {};
+Elm.ElmTest.Runner = Elm.ElmTest.Runner || {};
+Elm.ElmTest.Runner.Console = Elm.ElmTest.Runner.Console || {};
+Elm.ElmTest.Runner.Console.make = function (_elm) {
+   "use strict";
+   _elm.ElmTest = _elm.ElmTest || {};
+   _elm.ElmTest.Runner = _elm.ElmTest.Runner || {};
+   _elm.ElmTest.Runner.Console = _elm.ElmTest.Runner.Console || {};
+   if (_elm.ElmTest.Runner.Console.values) return _elm.ElmTest.Runner.Console.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Console = Elm.Console.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest$Run = Elm.ElmTest.Run.make(_elm),
+   $ElmTest$Runner$String = Elm.ElmTest.Runner.String.make(_elm),
+   $ElmTest$Test = Elm.ElmTest.Test.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var runDisplay = function (tests) {
+      var _p0 = $ElmTest$Runner$String.run(tests);
+      if (_p0.ctor === "::" && _p0._0.ctor === "_Tuple2") {
+            var out = A2($Basics._op["++"],
+            _p0._0._0,
+            A2($Basics._op["++"],"\n\n",function (_p1) {    return $String.concat(A2($List.intersperse,"\n",A2($List.map,$Basics.fst,_p1)));}(_p0._1)));
+            return A2($Console._op[">>>"],
+            $Console.putStrLn(out),
+            function () {
+               var _p2 = $ElmTest$Run.pass(_p0._0._1);
+               if (_p2 === true) {
+                     return $Console.exit(0);
+                  } else {
+                     return $Console.exit(1);
+                  }
+            }());
+         } else {
+            return $Console.exit(1);
+         }
+   };
+   return _elm.ElmTest.Runner.Console.values = {_op: _op,runDisplay: runDisplay};
+};
+Elm.ElmTest = Elm.ElmTest || {};
+Elm.ElmTest.make = function (_elm) {
+   "use strict";
+   _elm.ElmTest = _elm.ElmTest || {};
+   if (_elm.ElmTest.values) return _elm.ElmTest.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Console = Elm.Console.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest$Assertion = Elm.ElmTest.Assertion.make(_elm),
+   $ElmTest$Runner$Console = Elm.ElmTest.Runner.Console.make(_elm),
+   $ElmTest$Runner$Element = Elm.ElmTest.Runner.Element.make(_elm),
+   $ElmTest$Runner$String = Elm.ElmTest.Runner.String.make(_elm),
+   $ElmTest$Test = Elm.ElmTest.Test.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var stringRunner = $ElmTest$Runner$String.runDisplay;
+   var consoleRunner = $ElmTest$Runner$Console.runDisplay;
+   var elementRunner = $ElmTest$Runner$Element.runDisplay;
+   var fail = $ElmTest$Assertion.AlwaysFail;
+   var pass = $ElmTest$Assertion.AlwaysPass;
+   var assertionList = $ElmTest$Assertion.assertionList;
+   var lazyAssert = $ElmTest$Assertion.assertT;
+   var assertNotEqual = $ElmTest$Assertion.assertNotEqual;
+   var assertEqual = $ElmTest$Assertion.assertEqual;
+   var assert = $ElmTest$Assertion.assert;
+   var suite = $ElmTest$Test.suite;
+   var equals = $ElmTest$Test.equals;
+   var defaultTest = $ElmTest$Test.defaultTest;
+   var test = $ElmTest$Test.test;
+   return _elm.ElmTest.values = {_op: _op
+                                ,test: test
+                                ,defaultTest: defaultTest
+                                ,equals: equals
+                                ,suite: suite
+                                ,assert: assert
+                                ,assertEqual: assertEqual
+                                ,assertNotEqual: assertNotEqual
+                                ,lazyAssert: lazyAssert
+                                ,assertionList: assertionList
+                                ,pass: pass
+                                ,fail: fail
+                                ,elementRunner: elementRunner
+                                ,consoleRunner: consoleRunner
+                                ,stringRunner: stringRunner};
 };
 Elm.Common = Elm.Common || {};
 Elm.Common.make = function (_elm) {
@@ -10390,13 +9149,14 @@ Elm.Utils.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var getWithDefault = F3(function (key,$default,dict) {    return A2($Maybe.withDefault,$default,A2($Dict.get,key,dict));});
    var zipmap = F2(function (listA,listB) {
       return $Dict.fromList(A3($List.map2,F2(function (la,lb) {    return {ctor: "_Tuple2",_0: la,_1: lb};}),listA,listB));
    });
    var isSubset = F2(function (listA,listB) {
       return _U.cmp($List.length(listA),$List.length(listB)) < 1 && A2($List.all,function (x) {    return A2($List.member,x,listB);},listA);
    });
-   return _elm.Utils.values = {_op: _op,isSubset: isSubset,zipmap: zipmap};
+   return _elm.Utils.values = {_op: _op,isSubset: isSubset,zipmap: zipmap,getWithDefault: getWithDefault};
 };
 Elm.Game = Elm.Game || {};
 Elm.Game.make = function (_elm) {
@@ -10493,126 +9253,224 @@ Elm.Ai.make = function (_elm) {
    });
    return _elm.Ai.values = {_op: _op,isWinner: isWinner,bestMove: bestMove,rankBoard: rankBoard};
 };
-Elm.Styles = Elm.Styles || {};
-Elm.Styles.make = function (_elm) {
+Elm.AiTest = Elm.AiTest || {};
+Elm.AiTest.make = function (_elm) {
    "use strict";
-   _elm.Styles = _elm.Styles || {};
-   if (_elm.Styles.values) return _elm.Styles.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $Html = Elm.Html.make(_elm),
-   $Html$Attributes = Elm.Html.Attributes.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var _op = {};
-   var cellStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "margin",_1: "10px"}
-                                                   ,{ctor: "_Tuple2",_0: "width",_1: "150px"}
-                                                   ,{ctor: "_Tuple2",_0: "height",_1: "150px"}
-                                                   ,{ctor: "_Tuple2",_0: "font-size",_1: "6em"}]));
-   var boardStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "width",_1: "510px"},{ctor: "_Tuple2",_0: "margin",_1: "0 auto"}]));
-   var titleStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "text-align",_1: "center"}]));
-   return _elm.Styles.values = {_op: _op,titleStyles: titleStyles,boardStyles: boardStyles,cellStyles: cellStyles};
-};
-Elm.Mailbox = Elm.Mailbox || {};
-Elm.Mailbox.make = function (_elm) {
-   "use strict";
-   _elm.Mailbox = _elm.Mailbox || {};
-   if (_elm.Mailbox.values) return _elm.Mailbox.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Common = Elm.Common.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var _op = {};
-   var actions = $Signal.mailbox($Common.NoOp);
-   return _elm.Mailbox.values = {_op: _op,actions: actions};
-};
-Elm.Display = Elm.Display || {};
-Elm.Display.make = function (_elm) {
-   "use strict";
-   _elm.Display = _elm.Display || {};
-   if (_elm.Display.values) return _elm.Display.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Common = Elm.Common.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $Html = Elm.Html.make(_elm),
-   $Html$Events = Elm.Html.Events.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Mailbox = Elm.Mailbox.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm),
-   $Styles = Elm.Styles.make(_elm);
-   var _op = {};
-   var cell = F2(function (index,cell) {
-      var content = function () {
-         var _p0 = cell;
-         if (_p0.ctor === "Empty") {
-               return $Basics.toString(index + 1);
-            } else {
-               return $Basics.toString(cell);
-            }
-      }();
-      return A2($Html.button,
-      _U.list([$Styles.cellStyles,A2($Html$Events.onClick,$Mailbox.actions.address,$Common.Move(index))]),
-      _U.list([$Html.text(content)]));
-   });
-   var display = F2(function (address,game) {
-      return A2($Html.div,
-      _U.list([]),
-      _U.list([A2($Html.h1,_U.list([$Styles.titleStyles]),_U.list([$Html.text("Elm Tac Toe")]))
-              ,A2($Html.hr,_U.list([]),_U.list([]))
-              ,A2($Html.div,_U.list([$Styles.boardStyles]),A2($List.indexedMap,cell,game.board))
-              ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Turn: ",$Basics.toString(game.turn)))]))
-              ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))]));
-   });
-   return _elm.Display.values = {_op: _op,cell: cell,display: display};
-};
-Elm.Main = Elm.Main || {};
-Elm.Main.make = function (_elm) {
-   "use strict";
-   _elm.Main = _elm.Main || {};
-   if (_elm.Main.values) return _elm.Main.values;
+   _elm.AiTest = _elm.AiTest || {};
+   if (_elm.AiTest.values) return _elm.AiTest.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Ai = Elm.Ai.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest = Elm.ElmTest.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var rankBoardTest = A2($ElmTest.test,"",$ElmTest.assert(true));
+   var bestMoveTest = A2($ElmTest.suite,
+   "bestMove returns the most correct move given the board state and player",
+   _U.list([A2($ElmTest.test,"",A2($ElmTest.assertEqual,0,A2($Ai.bestMove,_U.list([$Common.Empty,$Common.X,$Common.X]),$Common.Human)))
+           ,A2($ElmTest.test,
+           "",
+           A2($ElmTest.assertEqual,
+           0,
+           A2($Ai.bestMove,_U.list([$Common.Empty,$Common.X,$Common.X,$Common.Empty,$Common.Empty,$Common.O,$Common.Empty,$Common.O,$Common.X]),$Common.Human)))
+           ,A2($ElmTest.test,
+           "",
+           A2($ElmTest.assertEqual,
+           5,
+           A2($Ai.bestMove,
+           _U.list([$Common.Empty,$Common.X,$Common.X,$Common.O,$Common.O,$Common.Empty,$Common.Empty,$Common.X,$Common.X]),
+           $Common.Computer)))]));
+   var isWinnerTest = A2($ElmTest.suite,
+   "isWinnerTest returns true if the given player has won the game",
+   _U.list([A2($ElmTest.test,"",$ElmTest.assert(A2($Ai.isWinner,_U.list([$Common.X,$Common.X,$Common.X]),$Common.Human)))
+           ,A2($ElmTest.test,"",$ElmTest.assert(A2($Ai.isWinner,_U.list([$Common.O,$Common.O,$Common.O]),$Common.Computer)))
+           ,A2($ElmTest.test,"",$ElmTest.assert($Basics.not(A2($Ai.isWinner,_U.list([$Common.X,$Common.X,$Common.X]),$Common.Computer))))]));
+   var aiSuite = A2($ElmTest.suite,"Ai",_U.list([isWinnerTest,bestMoveTest,rankBoardTest]));
+   return _elm.AiTest.values = {_op: _op,isWinnerTest: isWinnerTest,bestMoveTest: bestMoveTest,rankBoardTest: rankBoardTest,aiSuite: aiSuite};
+};
+Elm.TestHelpers = Elm.TestHelpers || {};
+Elm.TestHelpers.make = function (_elm) {
+   "use strict";
+   _elm.TestHelpers = _elm.TestHelpers || {};
+   if (_elm.TestHelpers.values) return _elm.TestHelpers.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var gameWithBoard = function (startBoard) {    return {turn: $Common.Human,board: startBoard,winner: $Common.None,state: $Common.Playing};};
+   var newGame = {turn: $Common.Human
+                 ,board: _U.list([$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty
+                                 ,$Common.Empty])
+                 ,winner: $Common.None
+                 ,state: $Common.Playing};
+   return _elm.TestHelpers.values = {_op: _op,newGame: newGame,gameWithBoard: gameWithBoard};
+};
+Elm.BoardTest = Elm.BoardTest || {};
+Elm.BoardTest.make = function (_elm) {
+   "use strict";
+   _elm.BoardTest = _elm.BoardTest || {};
+   if (_elm.BoardTest.values) return _elm.BoardTest.values;
+   var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Board = Elm.Board.make(_elm),
    $Common = Elm.Common.make(_elm),
    $Debug = Elm.Debug.make(_elm),
-   $Display = Elm.Display.make(_elm),
-   $Game = Elm.Game.make(_elm),
-   $Html = Elm.Html.make(_elm),
+   $ElmTest = Elm.ElmTest.make(_elm),
    $List = Elm.List.make(_elm),
-   $Mailbox = Elm.Mailbox.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   $Signal = Elm.Signal.make(_elm),
+   $TestHelpers = Elm.TestHelpers.make(_elm);
    var _op = {};
-   var makeComputerMove = function (game) {
-      var moveLocation = A2($Ai.bestMove,game.board,game.turn);
-      return _U.update(game,{board: A3($Board.updateBoard,moveLocation,game.turn,game.board)});
-   };
-   var update = F2(function (action,game) {
-      var _p0 = action;
-      if (_p0.ctor === "NoOp") {
-            return game;
-         } else {
-            var _p1 = _p0._0;
-            return A2($Game.validMove,
-            _p1,
-            game) ? $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove($Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,
-            _p1,
-            game)))))) : game;
-         }
-   });
-   var model = A3($Signal.foldp,update,$Game.newGame,$Mailbox.actions.signal);
-   var main = A2($Signal.map,$Display.display($Mailbox.actions.address),model);
-   return _elm.Main.values = {_op: _op,makeComputerMove: makeComputerMove,update: update,model: model,main: main};
+   var movesForTest = A2($ElmTest.suite,
+   "Returns a list of Indexes where the given player has moves on the board",
+   _U.list([A2($ElmTest.test,"",A2($ElmTest.assertEqual,A2($Board.movesFor,_U.list([$Common.X,$Common.Empty,$Common.O,$Common.O]),$Common.Human),_U.list([0])))
+           ,A2($ElmTest.test,
+           "",
+           A2($ElmTest.assertEqual,A2($Board.movesFor,_U.list([$Common.X,$Common.Empty,$Common.O,$Common.O]),$Common.Computer),_U.list([2,3])))
+           ,A2($ElmTest.test,
+           "",
+           A2($ElmTest.assertEqual,A2($Board.movesFor,_U.list([$Common.X,$Common.Empty,$Common.O,$Common.O]),$Common.None),_U.list([1])))]));
+   var makeMoveTest = A2($ElmTest.suite,
+   "Updates a given game record\'s board with the current player in the id provided",
+   _U.list([A2($ElmTest.test,
+           "Empty board",
+           A2($ElmTest.assertEqual,
+           function (_) {
+              return _.board;
+           }(A2($Board.makeMove,0,$TestHelpers.newGame)),
+           _U.list([$Common.X,$Common.Empty,$Common.Empty,$Common.Empty,$Common.Empty,$Common.Empty,$Common.Empty,$Common.Empty,$Common.Empty])))
+           ,A2($ElmTest.test,
+           "Existing board",
+           A2($ElmTest.assertEqual,
+           function (_) {
+              return _.board;
+           }(A2($Board.makeMove,1,$TestHelpers.gameWithBoard(_U.list([$Common.X,$Common.Empty,$Common.O])))),
+           _U.list([$Common.X,$Common.X,$Common.O])))]));
+   var placeTest = A2($ElmTest.suite,
+   "Converts Player type to Cell type",
+   _U.list([A2($ElmTest.test,"Human -> X",A2($ElmTest.assertEqual,$Board.place($Common.Human),$Common.X))
+           ,A2($ElmTest.test,"Computer -> X",A2($ElmTest.assertEqual,$Board.place($Common.Computer),$Common.O))
+           ,A2($ElmTest.test,"None -> Empty",A2($ElmTest.assertEqual,$Board.place($Common.None),$Common.Empty))]));
+   var boardSuite = A2($ElmTest.suite,"Board",_U.list([A2($ElmTest.test,"Addition",A2($ElmTest.assertEqual,3 + 7,10)),placeTest,makeMoveTest,movesForTest]));
+   return _elm.BoardTest.values = {_op: _op,placeTest: placeTest,makeMoveTest: makeMoveTest,movesForTest: movesForTest,boardSuite: boardSuite};
+};
+Elm.GameTest = Elm.GameTest || {};
+Elm.GameTest.make = function (_elm) {
+   "use strict";
+   _elm.GameTest = _elm.GameTest || {};
+   if (_elm.GameTest.values) return _elm.GameTest.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Common = Elm.Common.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest = Elm.ElmTest.make(_elm),
+   $Game = Elm.Game.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $TestHelpers = Elm.TestHelpers.make(_elm);
+   var _op = {};
+   var validMoveTest = A2($ElmTest.suite,
+   "Ensures the selected index is a valid move given a particular game state",
+   _U.list([A2($ElmTest.test,"",$ElmTest.assert(A2($Game.validMove,0,$Game.newGame)))
+           ,A2($ElmTest.test,"",$ElmTest.assert(A2($Game.validMove,1,$TestHelpers.gameWithBoard(_U.list([$Common.O,$Common.Empty,$Common.O])))))
+           ,A2($ElmTest.test,"",$ElmTest.assert($Basics.not(A2($Game.validMove,0,$TestHelpers.gameWithBoard(_U.list([$Common.O,$Common.X,$Common.O]))))))]));
+   var checkForWinnersTest = A2($ElmTest.suite,
+   "checkForWinner sets the game\'s winner if current player has won",
+   _U.list([A2($ElmTest.test,"",A2($ElmTest.assertEqual,$Common.None,function (_) {    return _.winner;}($Game.checkForWinners($Game.newGame))))
+           ,A2($ElmTest.test,
+           "",
+           A2($ElmTest.assertEqual,
+           $Common.Human,
+           function (_) {
+              return _.winner;
+           }($Game.checkForWinners($TestHelpers.gameWithBoard(_U.list([$Common.X,$Common.X,$Common.X]))))))
+           ,A2($ElmTest.test,
+           "",
+           A2($ElmTest.assertEqual,
+           $Common.None,
+           function (_) {
+              return _.winner;
+           }($Game.checkForWinners($TestHelpers.gameWithBoard(_U.list([$Common.O,$Common.O,$Common.O]))))))]));
+   var switchCurrentPlayerTest = A2($ElmTest.suite,
+   "switchCurrentPlayer returns the game for the next player",
+   _U.list([A2($ElmTest.test,"",A2($ElmTest.assertEqual,$Common.Computer,function (_) {    return _.turn;}($Game.switchCurrentPlayer($Game.newGame))))]));
+   var switchPlayerTest = A2($ElmTest.suite,
+   "switchPlayer returns the next player",
+   _U.list([A2($ElmTest.test,"",A2($ElmTest.assertEqual,$Game.switchPlayer($Common.Human),$Common.Computer))
+           ,A2($ElmTest.test,"",A2($ElmTest.assertEqual,$Game.switchPlayer($Common.Computer),$Common.Human))
+           ,A2($ElmTest.test,"",A2($ElmTest.assertEqual,$Game.switchPlayer($Common.None),$Common.None))]));
+   var gameSuite = A2($ElmTest.suite,"Game",_U.list([switchPlayerTest,switchCurrentPlayerTest,checkForWinnersTest,validMoveTest]));
+   return _elm.GameTest.values = {_op: _op
+                                 ,switchPlayerTest: switchPlayerTest
+                                 ,switchCurrentPlayerTest: switchCurrentPlayerTest
+                                 ,checkForWinnersTest: checkForWinnersTest
+                                 ,validMoveTest: validMoveTest
+                                 ,gameSuite: gameSuite};
+};
+Elm.UtilsTest = Elm.UtilsTest || {};
+Elm.UtilsTest.make = function (_elm) {
+   "use strict";
+   _elm.UtilsTest = _elm.UtilsTest || {};
+   if (_elm.UtilsTest.values) return _elm.UtilsTest.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest = Elm.ElmTest.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Utils = Elm.Utils.make(_elm);
+   var _op = {};
+   var isSubsetTest = A2($ElmTest.suite,
+   "isSubset",
+   _U.list([A2($ElmTest.test,"",$ElmTest.assert(A2($Utils.isSubset,_U.list([1]),_U.list([1,2,3]))))
+           ,A2($ElmTest.test,"",$ElmTest.assert($Basics.not(A2($Utils.isSubset,_U.list([2]),_U.list([1,3])))))
+           ,A2($ElmTest.test,"",$ElmTest.assert($Basics.not(A2($Utils.isSubset,_U.list([3,3,2]),_U.list([2,3])))))
+           ,A2($ElmTest.test,"",$ElmTest.assert(A2($Utils.isSubset,_U.list([3,2,2]),_U.list([2,2,3]))))]));
+   var utilsSuite = A2($ElmTest.suite,"Utils",_U.list([isSubsetTest]));
+   return _elm.UtilsTest.values = {_op: _op,isSubsetTest: isSubsetTest,utilsSuite: utilsSuite};
+};
+Elm.Test = Elm.Test || {};
+Elm.Test.make = function (_elm) {
+   "use strict";
+   _elm.Test = _elm.Test || {};
+   if (_elm.Test.values) return _elm.Test.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $AiTest = Elm.AiTest.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $BoardTest = Elm.BoardTest.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $ElmTest = Elm.ElmTest.make(_elm),
+   $GameTest = Elm.GameTest.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $UtilsTest = Elm.UtilsTest.make(_elm);
+   var _op = {};
+   var ticTacToeSuite = A2($ElmTest.suite,"Elm Tac Toe",_U.list([$GameTest.gameSuite,$BoardTest.boardSuite,$AiTest.aiSuite,$UtilsTest.utilsSuite]));
+   var main = $ElmTest.elementRunner(ticTacToeSuite);
+   return _elm.Test.values = {_op: _op,ticTacToeSuite: ticTacToeSuite,main: main};
 };

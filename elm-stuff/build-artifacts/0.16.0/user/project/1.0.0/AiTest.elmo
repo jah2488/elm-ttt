@@ -14,13 +14,26 @@ Elm.AiTest.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var rankBoardTest = A2($ElmTest.test,"",$ElmTest.assert(true));
-   var bestMoveTest = A2($ElmTest.test,"",A2($ElmTest.assertEqual,1,A2($Ai.bestMove,_U.list([$Common.Empty,$Common.X,$Common.X]),$Common.Human)));
+   var bestMoveTest = A2($ElmTest.suite,
+   "bestMove returns the most correct move given the board state and player",
+   _U.list([A2($ElmTest.test,"",A2($ElmTest.assertEqual,0,A2($Ai.bestMove,_U.list([$Common.Empty,$Common.X,$Common.X]),$Common.Human)))
+           ,A2($ElmTest.test,
+           "",
+           A2($ElmTest.assertEqual,
+           0,
+           A2($Ai.bestMove,_U.list([$Common.Empty,$Common.X,$Common.X,$Common.Empty,$Common.Empty,$Common.O,$Common.Empty,$Common.O,$Common.X]),$Common.Human)))
+           ,A2($ElmTest.test,
+           "",
+           A2($ElmTest.assertEqual,
+           5,
+           A2($Ai.bestMove,
+           _U.list([$Common.Empty,$Common.X,$Common.X,$Common.O,$Common.O,$Common.Empty,$Common.Empty,$Common.X,$Common.X]),
+           $Common.Computer)))]));
    var isWinnerTest = A2($ElmTest.suite,
    "isWinnerTest returns true if the given player has won the game",
    _U.list([A2($ElmTest.test,"",$ElmTest.assert(A2($Ai.isWinner,_U.list([$Common.X,$Common.X,$Common.X]),$Common.Human)))
            ,A2($ElmTest.test,"",$ElmTest.assert(A2($Ai.isWinner,_U.list([$Common.O,$Common.O,$Common.O]),$Common.Computer)))
            ,A2($ElmTest.test,"",$ElmTest.assert($Basics.not(A2($Ai.isWinner,_U.list([$Common.X,$Common.X,$Common.X]),$Common.Computer))))]));
-   var aiSuite = A2($ElmTest.suite,"Ai",_U.list([isWinnerTest,bestMoveTest,rankBoardTest]));
-   return _elm.AiTest.values = {_op: _op,isWinnerTest: isWinnerTest,bestMoveTest: bestMoveTest,rankBoardTest: rankBoardTest,aiSuite: aiSuite};
+   var aiSuite = A2($ElmTest.suite,"Ai",_U.list([isWinnerTest,bestMoveTest]));
+   return _elm.AiTest.values = {_op: _op,isWinnerTest: isWinnerTest,bestMoveTest: bestMoveTest,aiSuite: aiSuite};
 };

@@ -15,16 +15,21 @@ isWinnerTest =
 
 bestMoveTest : Test
 bestMoveTest =
-  test "" (assertEqual 1 (bestMove [Empty, X, X] Human))
+  suite "bestMove returns the most correct move given the board state and player"
+  [ test "" (assertEqual 0 (bestMove [Empty, X, X] Human))
 
-rankBoardTest : Test
-rankBoardTest =
-  test "" (assert True)
+  , test "" (assertEqual 0 (bestMove [ Empty,     X,  X
+                                     , Empty, Empty,  O
+                                     , Empty,     O,  X] Human))
+
+  , test "" (assertEqual 5 (bestMove [ Empty, X, X
+                                     ,     O, O, Empty
+                                     , Empty, X, X] Computer))
+  ]
 
 aiSuite : Test
 aiSuite =
   suite "Ai"
     [ isWinnerTest
     , bestMoveTest
-    , rankBoardTest
     ]
