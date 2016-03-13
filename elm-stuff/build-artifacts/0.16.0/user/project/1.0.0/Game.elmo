@@ -18,7 +18,7 @@ Elm.Game.make = function (_elm) {
    var checkForWinners = function (game) {
       var moves = A2($Board.movesFor,game.board,game.turn);
       var didWin = A2($List.any,function (winSet) {    return A2($Utils.isSubset,winSet,moves);},$Board.winningMoves);
-      return _U.eq(didWin,true) ? _U.update(game,{winner: game.turn}) : game;
+      return _U.eq(didWin,true) ? _U.update(game,{winner: game.turn,state: $Common.GameOver}) : game;
    };
    var switchPlayer = function (turn) {
       var _p0 = turn;

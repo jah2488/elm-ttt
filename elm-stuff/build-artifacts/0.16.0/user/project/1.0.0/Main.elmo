@@ -24,16 +24,15 @@ Elm.Main.make = function (_elm) {
    };
    var update = F2(function (action,game) {
       var _p0 = action;
-      if (_p0.ctor === "NoOp") {
-            return game;
-         } else {
-            var _p1 = _p0._0;
-            return A2($Game.validMove,
-            _p1,
-            game) ? $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove($Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,
-            _p1,
-            game)))))) : game;
-         }
+      switch (_p0.ctor)
+      {case "NewGame": return $Game.newGame;
+         case "NoOp": return game;
+         default: var _p1 = _p0._0;
+           return A2($Game.validMove,
+           _p1,
+           game) ? $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove($Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,
+           _p1,
+           game)))))) : game;}
    });
    var model = A3($Signal.foldp,update,$Game.newGame,$Mailbox.actions.signal);
    var main = A2($Signal.map,$Display.display($Mailbox.actions.address),model);

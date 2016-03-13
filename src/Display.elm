@@ -1,5 +1,5 @@
 module Display where
-import Html exposing (Html, div, h1, hr, button, text)
+import Html exposing (Html, div, h1, h2, hr, button, text)
 import Html.Events exposing (..)
 import Signal exposing (Signal, Address)
 
@@ -22,10 +22,12 @@ display address game =
   div []
     [ h1 [titleStyles] [text "Elm Tac Toe"]
     , hr [] []
-    , div [boardStyles]
+    , div [boardStyles game.state]
       [ div [] (List.indexedMap cell game.board)
       , div [messageStyles] [text game.message]
       ]
-    , h1 [] [text ("Turn: " ++ toString game.turn)]
-    , h1 [] [text ("Winner: " ++ toString game.winner)]
+    , h2 [] [text ("Turn: " ++ toString game.turn)]
+    , h2 [] [text ("State: " ++ toString game.state)]
+    , h2 [] [text ("Winner: " ++ toString game.winner)]
+    , button [onClick actions.address (NewGame)] [text "Start a New Game"]
     ]

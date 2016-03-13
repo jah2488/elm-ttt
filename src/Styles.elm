@@ -1,15 +1,34 @@
 module Styles where
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Common exposing (..)
 
 -- Styles
 titleStyles : Attribute
 titleStyles =
   style [("text-align", "center")]
 
-boardStyles : Attribute
-boardStyles =
-  style [("width", "510px"), ("margin", "0 auto")]
+boardStyles : State -> Attribute
+boardStyles gameState =
+  let
+    standardStyles =
+      [ ("width", "510px")
+      , ("margin", "0 auto")
+      , ("overflow", "hidden")
+      ]
+    gameOverStyles =
+      if gameState == GameOver then
+        [ ("opacity", "0.5")
+        , ("pointer-events", "none")
+        , ("-webkit-user-select", "none")
+        , ("-moz-user-select", "none")
+        , ("user-select", "none")
+        ]
+     else
+       []
+  in
+    style
+      (List.append standardStyles gameOverStyles)
 
 cellStyles : String -> Attribute
 cellStyles content =

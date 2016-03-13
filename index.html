@@ -10261,6 +10261,7 @@ Elm.Common.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
    var Game = F5(function (a,b,c,d,e) {    return {turn: a,board: b,winner: c,state: d,message: e};});
+   var NewGame = {ctor: "NewGame"};
    var Move = function (a) {    return {ctor: "Move",_0: a};};
    var NoOp = {ctor: "NoOp"};
    var Empty = {ctor: "Empty"};
@@ -10282,6 +10283,7 @@ Elm.Common.make = function (_elm) {
                                ,Empty: Empty
                                ,NoOp: NoOp
                                ,Move: Move
+                               ,NewGame: NewGame
                                ,Game: Game};
 };Elm.Board = Elm.Board || {};
 Elm.Board.make = function (_elm) {
@@ -10377,7 +10379,7 @@ Elm.Game.make = function (_elm) {
    var checkForWinners = function (game) {
       var moves = A2($Board.movesFor,game.board,game.turn);
       var didWin = A2($List.any,function (winSet) {    return A2($Utils.isSubset,winSet,moves);},$Board.winningMoves);
-      return _U.eq(didWin,true) ? _U.update(game,{winner: game.turn}) : game;
+      return _U.eq(didWin,true) ? _U.update(game,{winner: game.turn,state: $Common.GameOver}) : game;
    };
    var switchPlayer = function (turn) {
       var _p0 = turn;
@@ -10463,6 +10465,7 @@ Elm.Styles.make = function (_elm) {
    if (_elm.Styles.values) return _elm.Styles.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
+   $Common = Elm.Common.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
@@ -10492,7 +10495,17 @@ Elm.Styles.make = function (_elm) {
                                             ,{ctor: "_Tuple2",_0: "font-size",_1: "6em"}
                                             ,contentStyle]));
    };
-   var boardStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "width",_1: "510px"},{ctor: "_Tuple2",_0: "margin",_1: "0 auto"}]));
+   var boardStyles = function (gameState) {
+      var gameOverStyles = _U.eq(gameState,$Common.GameOver) ? _U.list([{ctor: "_Tuple2",_0: "opacity",_1: "0.5"}
+                                                                       ,{ctor: "_Tuple2",_0: "pointer-events",_1: "none"}
+                                                                       ,{ctor: "_Tuple2",_0: "-webkit-user-select",_1: "none"}
+                                                                       ,{ctor: "_Tuple2",_0: "-moz-user-select",_1: "none"}
+                                                                       ,{ctor: "_Tuple2",_0: "user-select",_1: "none"}]) : _U.list([]);
+      var standardStyles = _U.list([{ctor: "_Tuple2",_0: "width",_1: "510px"}
+                                   ,{ctor: "_Tuple2",_0: "margin",_1: "0 auto"}
+                                   ,{ctor: "_Tuple2",_0: "overflow",_1: "hidden"}]);
+      return $Html$Attributes.style(A2($List.append,standardStyles,gameOverStyles));
+   };
    var titleStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "text-align",_1: "center"}]));
    return _elm.Styles.values = {_op: _op,titleStyles: titleStyles,boardStyles: boardStyles,cellStyles: cellStyles,messageStyles: messageStyles};
 };Elm.Mailbox = Elm.Mailbox || {};
@@ -10548,11 +10561,13 @@ Elm.Display.make = function (_elm) {
       _U.list([A2($Html.h1,_U.list([$Styles.titleStyles]),_U.list([$Html.text("Elm Tac Toe")]))
               ,A2($Html.hr,_U.list([]),_U.list([]))
               ,A2($Html.div,
-              _U.list([$Styles.boardStyles]),
+              _U.list([$Styles.boardStyles(game.state)]),
               _U.list([A2($Html.div,_U.list([]),A2($List.indexedMap,cell,game.board))
                       ,A2($Html.div,_U.list([$Styles.messageStyles]),_U.list([$Html.text(game.message)]))]))
-              ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Turn: ",$Basics.toString(game.turn)))]))
-              ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))]));
+              ,A2($Html.h2,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Turn: ",$Basics.toString(game.turn)))]))
+              ,A2($Html.h2,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"State: ",$Basics.toString(game.state)))]))
+              ,A2($Html.h2,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))
+              ,A2($Html.button,_U.list([A2($Html$Events.onClick,$Mailbox.actions.address,$Common.NewGame)]),_U.list([$Html.text("Start a New Game")]))]));
    });
    return _elm.Display.values = {_op: _op,cell: cell,display: display};
 };Elm.Main = Elm.Main || {};
@@ -10581,16 +10596,15 @@ Elm.Main.make = function (_elm) {
    };
    var update = F2(function (action,game) {
       var _p0 = action;
-      if (_p0.ctor === "NoOp") {
-            return game;
-         } else {
-            var _p1 = _p0._0;
-            return A2($Game.validMove,
-            _p1,
-            game) ? $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove($Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,
-            _p1,
-            game)))))) : game;
-         }
+      switch (_p0.ctor)
+      {case "NewGame": return $Game.newGame;
+         case "NoOp": return game;
+         default: var _p1 = _p0._0;
+           return A2($Game.validMove,
+           _p1,
+           game) ? $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove($Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,
+           _p1,
+           game)))))) : game;}
    });
    var model = A3($Signal.foldp,update,$Game.newGame,$Mailbox.actions.signal);
    var main = A2($Signal.map,$Display.display($Mailbox.actions.address),model);

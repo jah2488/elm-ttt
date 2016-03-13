@@ -4,7 +4,7 @@ module Common where
 type State = Playing | GameOver
 type Player = Human | Computer | None
 type Cell = X | O | Empty
-type Action = NoOp | Move Int
+type Action = NoOp | Move Int | NewGame
 
 -- Model
 type alias Game =

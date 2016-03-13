@@ -35,11 +35,13 @@ Elm.Display.make = function (_elm) {
       _U.list([A2($Html.h1,_U.list([$Styles.titleStyles]),_U.list([$Html.text("Elm Tac Toe")]))
               ,A2($Html.hr,_U.list([]),_U.list([]))
               ,A2($Html.div,
-              _U.list([$Styles.boardStyles]),
+              _U.list([$Styles.boardStyles(game.state)]),
               _U.list([A2($Html.div,_U.list([]),A2($List.indexedMap,cell,game.board))
                       ,A2($Html.div,_U.list([$Styles.messageStyles]),_U.list([$Html.text(game.message)]))]))
-              ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Turn: ",$Basics.toString(game.turn)))]))
-              ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))]));
+              ,A2($Html.h2,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Turn: ",$Basics.toString(game.turn)))]))
+              ,A2($Html.h2,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"State: ",$Basics.toString(game.state)))]))
+              ,A2($Html.h2,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))
+              ,A2($Html.button,_U.list([A2($Html$Events.onClick,$Mailbox.actions.address,$Common.NewGame)]),_U.list([$Html.text("Start a New Game")]))]));
    });
    return _elm.Display.values = {_op: _op,cell: cell,display: display};
 };
