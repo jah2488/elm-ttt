@@ -4,6 +4,7 @@ Elm.Main.make = function (_elm) {
    _elm.Main = _elm.Main || {};
    if (_elm.Main.values) return _elm.Main.values;
    var _U = Elm.Native.Utils.make(_elm),
+   $Ai = Elm.Ai.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Board = Elm.Board.make(_elm),
    $Common = Elm.Common.make(_elm),
@@ -17,16 +18,24 @@ Elm.Main.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var makeComputerMove = function (game) {
+      var moveLocation = A2($Ai.bestMove,game.board,game.turn);
+      return _U.update(game,{board: A3($Board.updateBoard,moveLocation,game.turn,game.board)});
+   };
    var update = F2(function (action,game) {
       var _p0 = action;
       if (_p0.ctor === "NoOp") {
             return game;
          } else {
             var _p1 = _p0._0;
-            return A2($Game.validMove,_p1,game) ? $Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,_p1,game))) : game;
+            return A2($Game.validMove,
+            _p1,
+            game) ? $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove($Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,
+            _p1,
+            game)))))) : game;
          }
    });
    var model = A3($Signal.foldp,update,$Game.newGame,$Mailbox.actions.signal);
    var main = A2($Signal.map,$Display.display($Mailbox.actions.address),model);
-   return _elm.Main.values = {_op: _op,update: update,model: model,main: main};
+   return _elm.Main.values = {_op: _op,makeComputerMove: makeComputerMove,update: update,model: model,main: main};
 };

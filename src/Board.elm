@@ -13,15 +13,24 @@ place player =
     Computer -> O
     None -> Empty
 
+cellPlayer : Cell -> Player
+cellPlayer cell =
+  case cell of
+    X -> Human
+    O -> Computer
+    Empty -> None
+
+
+updateBoard : Int -> Player -> List Cell -> List Cell
+updateBoard id player board =
+  List.indexedMap
+    (\idx cell ->
+      if id == idx then (place player) else cell) board
+
+
 makeMove : Int -> Game -> Game
 makeMove id game =
-  let
-    newBoard =
-      (List.indexedMap
-        (\idx cell ->
-          if id == idx then (place game.turn) else cell) game.board)
-  in
-    { game | board = newBoard }
+  { game | board = (updateBoard id game.turn game.board) }
 
 movesFor : List Cell -> Player -> List Int
 movesFor board player =

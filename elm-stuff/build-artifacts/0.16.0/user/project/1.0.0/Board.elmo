@@ -12,20 +12,27 @@ Elm.Board.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var place = function (player) {
-      var _p0 = player;
+   var cellPlayer = function (cell) {
+      var _p0 = cell;
       switch (_p0.ctor)
+      {case "X": return $Common.Human;
+         case "O": return $Common.Computer;
+         default: return $Common.None;}
+   };
+   var place = function (player) {
+      var _p1 = player;
+      switch (_p1.ctor)
       {case "Human": return $Common.X;
          case "Computer": return $Common.O;
          default: return $Common.Empty;}
    };
-   var makeMove = F2(function (id,game) {
-      var newBoard = A2($List.indexedMap,F2(function (idx,cell) {    return _U.eq(id,idx) ? place(game.turn) : cell;}),game.board);
-      return _U.update(game,{board: newBoard});
+   var updateBoard = F3(function (id,player,board) {
+      return A2($List.indexedMap,F2(function (idx,cell) {    return _U.eq(id,idx) ? place(player) : cell;}),board);
    });
+   var makeMove = F2(function (id,game) {    return _U.update(game,{board: A3(updateBoard,id,game.turn,game.board)});});
    var movesFor = F2(function (board,player) {
       var playerPiece = place(player);
-      var isPlayer = function (_p1) {    var _p2 = _p1;return _U.eq(playerPiece,_p2._1) ? $Maybe.Just(_p2._0) : $Maybe.Nothing;};
+      var isPlayer = function (_p2) {    var _p3 = _p2;return _U.eq(playerPiece,_p3._1) ? $Maybe.Just(_p3._0) : $Maybe.Nothing;};
       return A2($List.filterMap,isPlayer,A2($List.indexedMap,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),board));
    });
    var winningMoves = _U.list([_U.list([0,1,2])
@@ -36,5 +43,11 @@ Elm.Board.make = function (_elm) {
                               ,_U.list([2,5,8])
                               ,_U.list([0,4,8])
                               ,_U.list([6,4,2])]);
-   return _elm.Board.values = {_op: _op,winningMoves: winningMoves,place: place,makeMove: makeMove,movesFor: movesFor};
+   return _elm.Board.values = {_op: _op
+                              ,winningMoves: winningMoves
+                              ,place: place
+                              ,cellPlayer: cellPlayer
+                              ,updateBoard: updateBoard
+                              ,makeMove: makeMove
+                              ,movesFor: movesFor};
 };

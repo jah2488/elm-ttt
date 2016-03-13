@@ -10,7 +10,8 @@ newGame =
   , board =
     [ Empty, Empty, Empty
     , Empty, Empty, Empty
-    , Empty, Empty, Empty ]
+    , Empty, Empty, Empty
+    ]
   , winner = None
   , state = Playing
   }

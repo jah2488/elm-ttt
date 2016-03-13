@@ -14,7 +14,6 @@ Elm.Common.make = function (_elm) {
    var Game = F4(function (a,b,c,d) {    return {turn: a,board: b,winner: c,state: d};});
    var Move = function (a) {    return {ctor: "Move",_0: a};};
    var NoOp = {ctor: "NoOp"};
-   var Int = {ctor: "Int"};
    var Empty = {ctor: "Empty"};
    var O = {ctor: "O"};
    var X = {ctor: "X"};
@@ -32,7 +31,6 @@ Elm.Common.make = function (_elm) {
                                ,X: X
                                ,O: O
                                ,Empty: Empty
-                               ,Int: Int
                                ,NoOp: NoOp
                                ,Move: Move
                                ,Game: Game};
