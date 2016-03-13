@@ -8,10 +8,22 @@ import Mailbox exposing (..)
 import Ai
 
 
+-- The first move takes a very long time to process, but it is always pos 0 or 4
+cheatFirstMove : Game -> Int
+cheatFirstMove game =
+  if validMove 0 game then
+    0
+  else
+    4
+
 makeComputerMove : Game -> Game
 makeComputerMove game =
   let
-    moveLocation = Ai.bestMove game.board game.turn
+    moveLocation =
+    if List.isEmpty (movesFor game.board Computer) then
+      cheatFirstMove game
+    else
+      Ai.bestMove game.board game.turn
   in
     { game | board = updateBoard moveLocation game.turn game.board }
 
