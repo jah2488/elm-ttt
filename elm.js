@@ -10299,7 +10299,8 @@ Elm.Common.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var Game = F4(function (a,b,c,d) {    return {turn: a,board: b,winner: c,state: d};});
+   var Game = F5(function (a,b,c,d,e) {    return {turn: a,board: b,winner: c,state: d,message: e};});
+   var Message = {ctor: "Message"};
    var Move = function (a) {    return {ctor: "Move",_0: a};};
    var NoOp = {ctor: "NoOp"};
    var Empty = {ctor: "Empty"};
@@ -10321,6 +10322,7 @@ Elm.Common.make = function (_elm) {
                                ,Empty: Empty
                                ,NoOp: NoOp
                                ,Move: Move
+                               ,Message: Message
                                ,Game: Game};
 };
 Elm.Board = Elm.Board || {};
@@ -10390,13 +10392,14 @@ Elm.Utils.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var getWithDefault = F3(function (key,$default,dict) {    return A2($Maybe.withDefault,$default,A2($Dict.get,key,dict));});
    var zipmap = F2(function (listA,listB) {
       return $Dict.fromList(A3($List.map2,F2(function (la,lb) {    return {ctor: "_Tuple2",_0: la,_1: lb};}),listA,listB));
    });
    var isSubset = F2(function (listA,listB) {
       return _U.cmp($List.length(listA),$List.length(listB)) < 1 && A2($List.all,function (x) {    return A2($List.member,x,listB);},listA);
    });
-   return _elm.Utils.values = {_op: _op,isSubset: isSubset,zipmap: zipmap};
+   return _elm.Utils.values = {_op: _op,isSubset: isSubset,zipmap: zipmap,getWithDefault: getWithDefault};
 };
 Elm.Game = Elm.Game || {};
 Elm.Game.make = function (_elm) {
@@ -10427,7 +10430,10 @@ Elm.Game.make = function (_elm) {
          case "Computer": return $Common.Human;
          default: return $Common.None;}
    };
-   var switchCurrentPlayer = function (game) {    return _U.update(game,{turn: switchPlayer(game.turn)});};
+   var switchCurrentPlayer = function (game) {
+      var newMessage = _U.eq(game.turn,$Common.Human) ? "Computer is thinking" : _U.eq(game.turn,$Common.Computer) ? "Your Move" : "...";
+      return _U.update(game,{turn: switchPlayer(game.turn),message: newMessage});
+   };
    var newGame = {turn: $Common.Human
                  ,board: _U.list([$Common.Empty
                                  ,$Common.Empty
@@ -10439,7 +10445,8 @@ Elm.Game.make = function (_elm) {
                                  ,$Common.Empty
                                  ,$Common.Empty])
                  ,winner: $Common.None
-                 ,state: $Common.Playing};
+                 ,state: $Common.Playing
+                 ,message: "Pick your starting move"};
    return _elm.Game.values = {_op: _op
                              ,newGame: newGame
                              ,switchPlayer: switchPlayer
@@ -10483,13 +10490,15 @@ Elm.Ai.make = function (_elm) {
    });
    var bestMove = F2(function (board,player) {
       var updatedBoard = function (id) {    return A3($Board.updateBoard,id,player,board);};
-      var rankedBoard = function (id) {    return A3(rankBoard,updatedBoard(id),player,1);};
       var moves = A2($Board.movesFor,board,$Common.None);
+      var unFoundMoveDefault = 0;
+      var defaultWinScore = 1;
+      var rankedBoard = function (id) {    return A3(rankBoard,updatedBoard(id),player,defaultWinScore);};
       var mappedMoves = A2($List.map,function (id) {    return rankedBoard(id);},moves);
       var scores = A2($Utils.zipmap,moves,mappedMoves);
-      var bestScore = A2($Maybe.withDefault,0,$List.maximum($Dict.values(scores)));
-      var bestMove = A2($List.filter,function (x) {    return _U.eq(A2($Maybe.withDefault,0,A2($Dict.get,x,scores)),bestScore);},moves);
-      return A2($Maybe.withDefault,0,$List.head(bestMove));
+      var bestScore = A2($Maybe.withDefault,unFoundMoveDefault,$List.maximum($Dict.values(scores)));
+      var bestMove = A2($List.filter,function (x) {    return _U.eq(A2($Maybe.withDefault,unFoundMoveDefault,A2($Dict.get,x,scores)),bestScore);},moves);
+      return A2($Maybe.withDefault,unFoundMoveDefault,$List.head(bestMove));
    });
    return _elm.Ai.values = {_op: _op,isWinner: isWinner,bestMove: bestMove,rankBoard: rankBoard};
 };
@@ -10508,13 +10517,30 @@ Elm.Styles.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var cellStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "margin",_1: "10px"}
-                                                   ,{ctor: "_Tuple2",_0: "width",_1: "150px"}
-                                                   ,{ctor: "_Tuple2",_0: "height",_1: "150px"}
-                                                   ,{ctor: "_Tuple2",_0: "font-size",_1: "6em"}]));
+   var messageStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "border",_1: "2px solid #FEDD97"}
+                                                      ,{ctor: "_Tuple2",_0: "background",_1: "#FEEDC9"}
+                                                      ,{ctor: "_Tuple2",_0: "color",_1: "#FDB110"}
+                                                      ,{ctor: "_Tuple2",_0: "margin",_1: "0 20px"}
+                                                      ,{ctor: "_Tuple2",_0: "border-radius",_1: "20px"}
+                                                      ,{ctor: "_Tuple2",_0: "padding",_1: "10px"}
+                                                      ,{ctor: "_Tuple2",_0: "text-align",_1: "center"}]));
+   var cellStyles = function (content) {
+      var contentStyle = function () {
+         var _p0 = content;
+         switch (_p0)
+         {case "X": return {ctor: "_Tuple2",_0: "color",_1: "#2BC4F2"};
+            case "O": return {ctor: "_Tuple2",_0: "color",_1: "#A237FF"};
+            default: return {ctor: "_Tuple2",_0: "color",_1: "#4A4A4A"};}
+      }();
+      return $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "margin",_1: "10px"}
+                                            ,{ctor: "_Tuple2",_0: "width",_1: "150px"}
+                                            ,{ctor: "_Tuple2",_0: "height",_1: "150px"}
+                                            ,{ctor: "_Tuple2",_0: "font-size",_1: "6em"}
+                                            ,contentStyle]));
+   };
    var boardStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "width",_1: "510px"},{ctor: "_Tuple2",_0: "margin",_1: "0 auto"}]));
    var titleStyles = $Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "text-align",_1: "center"}]));
-   return _elm.Styles.values = {_op: _op,titleStyles: titleStyles,boardStyles: boardStyles,cellStyles: cellStyles};
+   return _elm.Styles.values = {_op: _op,titleStyles: titleStyles,boardStyles: boardStyles,cellStyles: cellStyles,messageStyles: messageStyles};
 };
 Elm.Mailbox = Elm.Mailbox || {};
 Elm.Mailbox.make = function (_elm) {
@@ -10561,7 +10587,7 @@ Elm.Display.make = function (_elm) {
             }
       }();
       return A2($Html.button,
-      _U.list([$Styles.cellStyles,A2($Html$Events.onClick,$Mailbox.actions.address,$Common.Move(index))]),
+      _U.list([$Styles.cellStyles(content),A2($Html$Events.onClick,$Mailbox.actions.address,$Common.Move(index))]),
       _U.list([$Html.text(content)]));
    });
    var display = F2(function (address,game) {
@@ -10569,7 +10595,10 @@ Elm.Display.make = function (_elm) {
       _U.list([]),
       _U.list([A2($Html.h1,_U.list([$Styles.titleStyles]),_U.list([$Html.text("Elm Tac Toe")]))
               ,A2($Html.hr,_U.list([]),_U.list([]))
-              ,A2($Html.div,_U.list([$Styles.boardStyles]),A2($List.indexedMap,cell,game.board))
+              ,A2($Html.div,
+              _U.list([$Styles.boardStyles]),
+              _U.list([A2($Html.div,_U.list([]),A2($List.indexedMap,cell,game.board))
+                      ,A2($Html.div,_U.list([$Styles.messageStyles]),_U.list([$Html.text(game.message)]))]))
               ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Turn: ",$Basics.toString(game.turn)))]))
               ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))]));
    });
@@ -10601,16 +10630,13 @@ Elm.Main.make = function (_elm) {
    };
    var update = F2(function (action,game) {
       var _p0 = action;
-      if (_p0.ctor === "NoOp") {
-            return game;
-         } else {
-            var _p1 = _p0._0;
-            return A2($Game.validMove,
-            _p1,
-            game) ? $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove($Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,
-            _p1,
-            game)))))) : game;
-         }
+      switch (_p0.ctor)
+      {case "NoOp": return game;
+         case "Message": return game;
+         default: var _p1 = _p0._0;
+           var compGame = A2($Game.validMove,_p1,game) ? $Game.switchCurrentPlayer($Game.checkForWinners(A2($Board.makeMove,_p1,game))) : game;
+           var updatedGame = A2(update,$Common.Message,compGame);
+           return $Game.switchCurrentPlayer($Game.checkForWinners(makeComputerMove(updatedGame)));}
    });
    var model = A3($Signal.foldp,update,$Game.newGame,$Mailbox.actions.signal);
    var main = A2($Signal.map,$Display.display($Mailbox.actions.address),model);

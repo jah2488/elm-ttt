@@ -26,7 +26,7 @@ Elm.Display.make = function (_elm) {
             }
       }();
       return A2($Html.button,
-      _U.list([$Styles.cellStyles,A2($Html$Events.onClick,$Mailbox.actions.address,$Common.Move(index))]),
+      _U.list([$Styles.cellStyles(content),A2($Html$Events.onClick,$Mailbox.actions.address,$Common.Move(index))]),
       _U.list([$Html.text(content)]));
    });
    var display = F2(function (address,game) {
@@ -34,7 +34,10 @@ Elm.Display.make = function (_elm) {
       _U.list([]),
       _U.list([A2($Html.h1,_U.list([$Styles.titleStyles]),_U.list([$Html.text("Elm Tac Toe")]))
               ,A2($Html.hr,_U.list([]),_U.list([]))
-              ,A2($Html.div,_U.list([$Styles.boardStyles]),A2($List.indexedMap,cell,game.board))
+              ,A2($Html.div,
+              _U.list([$Styles.boardStyles]),
+              _U.list([A2($Html.div,_U.list([]),A2($List.indexedMap,cell,game.board))
+                      ,A2($Html.div,_U.list([$Styles.messageStyles]),_U.list([$Html.text(game.message)]))]))
               ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Turn: ",$Basics.toString(game.turn)))]))
               ,A2($Html.h1,_U.list([]),_U.list([$Html.text(A2($Basics._op["++"],"Winner: ",$Basics.toString(game.winner)))]))]));
    });

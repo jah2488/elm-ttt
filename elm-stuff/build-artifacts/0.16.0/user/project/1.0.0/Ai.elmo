@@ -34,13 +34,15 @@ Elm.Ai.make = function (_elm) {
    });
    var bestMove = F2(function (board,player) {
       var updatedBoard = function (id) {    return A3($Board.updateBoard,id,player,board);};
-      var rankedBoard = function (id) {    return A3(rankBoard,updatedBoard(id),player,1);};
       var moves = A2($Board.movesFor,board,$Common.None);
+      var $default = 0;
+      var defaultWinScore = 1;
+      var rankedBoard = function (id) {    return A3(rankBoard,updatedBoard(id),player,defaultWinScore);};
       var mappedMoves = A2($List.map,function (id) {    return rankedBoard(id);},moves);
       var scores = A2($Utils.zipmap,moves,mappedMoves);
-      var bestScore = A2($Maybe.withDefault,0,$List.maximum($Dict.values(scores)));
-      var bestMove = A2($List.filter,function (x) {    return _U.eq(A2($Maybe.withDefault,0,A2($Dict.get,x,scores)),bestScore);},moves);
-      return A2($Maybe.withDefault,0,$List.head(bestMove));
+      var bestScore = A2($Maybe.withDefault,$default,$List.maximum($Dict.values(scores)));
+      var bestMove = A2($List.filter,function (x) {    return _U.eq(A3($Utils.defaultGet,$default,x,scores),bestScore);},moves);
+      return A2($Maybe.withDefault,$default,$List.head(bestMove));
    });
    return _elm.Ai.values = {_op: _op,isWinner: isWinner,bestMove: bestMove,rankBoard: rankBoard};
 };

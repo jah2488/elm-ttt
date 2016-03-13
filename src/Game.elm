@@ -14,6 +14,7 @@ newGame =
     ]
   , winner = None
   , state = Playing
+  , message = "Pick your starting move"
   }
 
 switchPlayer : Player -> Player
@@ -25,7 +26,16 @@ switchPlayer turn =
 
 switchCurrentPlayer : Game -> Game
 switchCurrentPlayer game =
-  { game | turn = switchPlayer game.turn }
+  let
+    newMessage =
+      if game.turn == Human then
+        "Computer is thinking"
+      else if game.turn == Computer then
+        "Your Move"
+      else
+        "..."
+  in
+    { game | turn = switchPlayer game.turn, message = newMessage }
 
 checkForWinners : Game -> Game
 checkForWinners game =

@@ -17,19 +17,21 @@ isWinner board player =
 bestMove : List Cell -> Player -> Int
 bestMove board player =
   let
+    defaultWinScore = 1
+    default = 0
     moves = (movesFor board None)
     updatedBoard = (\id -> updateBoard id player board)
-    rankedBoard = (\id -> rankBoard (updatedBoard id) player 1)
+    rankedBoard = (\id -> rankBoard (updatedBoard id) player defaultWinScore)
     mappedMoves = List.map (\id -> rankedBoard id) moves
     scores = Utils.zipmap moves mappedMoves
     bestScore = scores
       |> Dict.values
       |> List.maximum
-      |> Maybe.withDefault 0
-    bestMove = List.filter (\x -> (Dict.get x scores |> Maybe.withDefault 0) == bestScore) moves
+      |> Maybe.withDefault default
+    bestMove = List.filter (\x -> (Utils.defaultGet default x scores) == bestScore) moves
   in
     List.head(bestMove)
-      |> Maybe.withDefault 0
+      |> Maybe.withDefault default
 
 rankBoard : List Cell -> Player -> Int -> Int
 rankBoard board player winScore =

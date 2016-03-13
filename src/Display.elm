@@ -15,14 +15,17 @@ cell index cell =
         Empty -> toString (index + 1)
         _ -> toString cell
   in
-    button [ cellStyles, onClick actions.address (Move index)] [text content]
+    button [ cellStyles content, onClick actions.address (Move index)] [text content]
 
 display : Address Action -> Game -> Html
 display address game =
   div []
     [ h1 [titleStyles] [text "Elm Tac Toe"]
     , hr [] []
-    , div [boardStyles] (List.indexedMap (cell) game.board)
+    , div [boardStyles]
+      [ div [] (List.indexedMap cell game.board)
+      , div [messageStyles] [text game.message]
+      ]
     , h1 [] [text ("Turn: " ++ toString game.turn)]
     , h1 [] [text ("Winner: " ++ toString game.winner)]
     ]

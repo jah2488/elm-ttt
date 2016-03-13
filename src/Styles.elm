@@ -11,11 +11,32 @@ boardStyles : Attribute
 boardStyles =
   style [("width", "510px"), ("margin", "0 auto")]
 
-cellStyles : Attribute
-cellStyles =
+cellStyles : String -> Attribute
+cellStyles content =
+  let
+    contentStyle =
+      case content of
+        "X" -> ("color", "#2BC4F2")
+        "O" -> ("color", "#A237FF")
+        _ -> ("color", "#4A4A4A")
+  in
+    style
+      [ ("margin", "10px")
+      , ("width", "150px")
+      , ("height", "150px")
+      , ("font-size", "6em")
+      , contentStyle
+      ]
+
+
+messageStyles : Attribute
+messageStyles =
   style
-    [ ("margin", "10px")
-    , ("width", "150px")
-    , ("height", "150px")
-    , ("font-size", "6em")
+    [ ("border", "2px solid #FEDD97")
+    , ("background", "#FEEDC9")
+    , ("color", "#FDB110")
+    , ("margin", "0 20px")
+    , ("border-radius", "20px")
+    , ("padding", "10px")
+    , ("text-align", "center")
     ]
